@@ -1,0 +1,7 @@
+{
+	"UI": true,
+	"Volume": 0.6,
+	"Sounds": [
+		"sounds/sfx_dice.mp3"
+	]
+}

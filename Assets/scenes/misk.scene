@@ -1,0 +1,80 @@
+{
+  "__guid": "a1b2c3d4-0000-4a00-9a00-000000000000",
+  "GameObjects": [
+    {
+      "__guid": "a1b2c3d4-0000-4a00-9a00-000000000001",
+      "Flags": 0,
+      "Name": "Camera",
+      "Position": "0,0,0",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.CameraComponent",
+          "__guid": "a1b2c3d4-0000-4a00-9a00-000000000002",
+          "BackgroundColor": "0.07,0.05,0.04,1",
+          "ClearFlags": "All",
+          "FieldOfView": 60,
+          "IsMainCamera": true,
+          "Orthographic": false,
+          "Priority": 1,
+          "RenderExcludeTags": "",
+          "RenderTags": "",
+          "TargetEye": "None",
+          "Viewport": "0,0,1,1",
+          "ZFar": 10000,
+          "ZNear": 10
+        }
+      ]
+    },
+    {
+      "__guid": "a1b2c3d4-0000-4a00-9a00-000000000010",
+      "Flags": 0,
+      "Name": "Game",
+      "Enabled": true,
+      "NetworkMode": 2,
+      "Components": [
+        {
+          "__type": "Misk.Presentation.MiskGame",
+          "__guid": "a1b2c3d4-0000-4a00-9a00-000000000011"
+        }
+      ]
+    },
+    {
+      "__guid": "a1b2c3d4-0000-4a00-9a00-000000000020",
+      "Flags": 0,
+      "Name": "Hud",
+      "Enabled": true,
+      "Components": [
+        {
+          "__type": "Sandbox.ScreenPanel",
+          "__guid": "a1b2c3d4-0000-4a00-9a00-000000000021",
+          "AutoScreenScale": true,
+          "Opacity": 1,
+          "Scale": 1,
+          "ZIndex": 100
+        },
+        {
+          "__type": "Misk.UI.MiskRoot",
+          "__guid": "a1b2c3d4-0000-4a00-9a00-000000000022"
+        }
+      ]
+    }
+  ],
+  "SceneProperties": {
+    "FixedUpdateFrequency": 50,
+    "MaxFixedUpdates": 5,
+    "NetworkFrequency": 60,
+    "NetworkInterpolation": true,
+    "ThreadedAnimation": true,
+    "TimeScale": 1,
+    "UseFixedUpdate": true,
+    "NavMesh": {
+      "Enabled": false
+    }
+  },
+  "Title": "misk",
+  "Description": "Misk — 2D Risk-like strategy. Boot scene: networked Game manager + screen UI.",
+  "ResourceVersion": 1,
+  "__references": [],
+  "__version": 1
+}

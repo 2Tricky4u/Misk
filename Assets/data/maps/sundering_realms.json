@@ -1,0 +1,42 @@
+{
+  "id": "sundering_realms",
+  "name": "The Sundering Realms",
+  "version": 1,
+  "background": "data/theme/maps/sundering_atlas.png",
+  "canvasSize": { "width": 1920, "height": 1080 },
+
+  "regions": [
+    { "id": "northern_holds", "name": "Northern Holds", "bonus": 3, "color": "#4a6b8a" },
+    { "id": "ashen_marches",  "name": "Ashen Marches",  "bonus": 4, "color": "#7a3b2e" },
+    { "id": "crownlands",     "name": "Crownlands",     "bonus": 5, "color": "#8a7a3a" },
+    { "id": "blackwood",      "name": "Blackwood",      "bonus": 3, "color": "#3a5a3a" },
+    { "id": "red_wastes",     "name": "Red Wastes",     "bonus": 3, "color": "#8a5a2a" }
+  ],
+
+  "territories": [
+    { "id": "frostmere",     "name": "Frostmere",      "region": "northern_holds", "position": { "x": 330,  "y": 190 }, "shape": [ {"x":140,"y":180}, {"x":360,"y":80}, {"x":580,"y":115}, {"x":580,"y":300}, {"x":140,"y":300} ], "adjacency": ["icereach", "mistveil"] },
+    { "id": "icereach",      "name": "Icereach",       "region": "northern_holds", "position": { "x": 800,  "y": 175 }, "shape": [ {"x":580,"y":115}, {"x":820,"y":95}, {"x":1020,"y":110}, {"x":1020,"y":300}, {"x":580,"y":300} ], "adjacency": ["frostmere", "graven_pass", "highcrown"] },
+    { "id": "graven_pass",   "name": "Graven Pass",    "region": "northern_holds", "position": { "x": 1200, "y": 170 }, "shape": [ {"x":1020,"y":110}, {"x":1240,"y":90}, {"x":1410,"y":115}, {"x":1410,"y":300}, {"x":1020,"y":300} ], "adjacency": ["icereach", "wolfsthrone", "highcrown"] },
+    { "id": "wolfsthrone",   "name": "Wolfsthrone",    "region": "northern_holds", "position": { "x": 1600, "y": 195 }, "shape": [ {"x":1410,"y":115}, {"x":1620,"y":95}, {"x":1800,"y":160}, {"x":1790,"y":300}, {"x":1410,"y":300} ], "adjacency": ["graven_pass", "cinderfell"] },
+
+    { "id": "mistveil",      "name": "Mistveil",       "region": "blackwood", "position": { "x": 330, "y": 400 }, "shape": [ {"x":140,"y":300}, {"x":575,"y":300}, {"x":575,"y":475}, {"x":140,"y":475} ], "adjacency": ["frostmere", "thornhall"] },
+    { "id": "thornhall",     "name": "Thornhall",      "region": "blackwood", "position": { "x": 360, "y": 580 }, "shape": [ {"x":140,"y":475}, {"x":575,"y":475}, {"x":575,"y":655}, {"x":140,"y":665} ], "adjacency": ["mistveil", "gloomroot", "hollowfen", "goldmere"] },
+    { "id": "gloomroot",     "name": "Gloomroot",      "region": "blackwood", "position": { "x": 290, "y": 820 }, "shape": [ {"x":140,"y":665}, {"x":360,"y":660}, {"x":360,"y":1000}, {"x":230,"y":1005}, {"x":140,"y":940} ], "adjacency": ["thornhall", "hollowfen", "dustmar"] },
+    { "id": "hollowfen",     "name": "Hollowfen",      "region": "blackwood", "position": { "x": 470, "y": 820 }, "shape": [ {"x":360,"y":660}, {"x":575,"y":655}, {"x":575,"y":1000}, {"x":360,"y":1000} ], "adjacency": ["thornhall", "gloomroot", "dustmar"] },
+
+    { "id": "highcrown",     "name": "Highcrown",      "region": "crownlands", "position": { "x": 740,  "y": 400 }, "shape": [ {"x":575,"y":300}, {"x":880,"y":300}, {"x":880,"y":485}, {"x":575,"y":475} ], "adjacency": ["icereach", "graven_pass", "veyrholm", "goldmere"] },
+    { "id": "veyrholm",      "name": "Veyrholm",       "region": "crownlands", "position": { "x": 1030, "y": 400 }, "shape": [ {"x":880,"y":300}, {"x":1180,"y":300}, {"x":1180,"y":485}, {"x":880,"y":485} ], "adjacency": ["highcrown", "kingsreach", "cinderfell"] },
+    { "id": "goldmere",      "name": "Goldmere",       "region": "crownlands", "position": { "x": 740,  "y": 575 }, "shape": [ {"x":575,"y":475}, {"x":880,"y":485}, {"x":880,"y":665}, {"x":575,"y":655} ], "adjacency": ["highcrown", "kingsreach", "thornhall", "bonereach"] },
+    { "id": "kingsreach",    "name": "Kingsreach",     "region": "crownlands", "position": { "x": 1030, "y": 580 }, "shape": [ {"x":880,"y":485}, {"x":1180,"y":485}, {"x":1180,"y":665}, {"x":880,"y":665} ], "adjacency": ["veyrholm", "goldmere", "ashmoor", "scarlet_dunes"] },
+
+    { "id": "cinderfell",    "name": "Cinderfell",     "region": "ashen_marches", "position": { "x": 1330, "y": 400 }, "shape": [ {"x":1180,"y":300}, {"x":1490,"y":300}, {"x":1490,"y":490}, {"x":1180,"y":485} ], "adjacency": ["wolfsthrone", "emberwatch", "ashmoor", "veyrholm"] },
+    { "id": "emberwatch",    "name": "Emberwatch",     "region": "ashen_marches", "position": { "x": 1620, "y": 410 }, "shape": [ {"x":1490,"y":300}, {"x":1800,"y":300}, {"x":1810,"y":490}, {"x":1490,"y":490} ], "adjacency": ["cinderfell", "scoria_gate"] },
+    { "id": "ashmoor",       "name": "Ashmoor",        "region": "ashen_marches", "position": { "x": 1330, "y": 650 }, "shape": [ {"x":1180,"y":485}, {"x":1490,"y":490}, {"x":1490,"y":800}, {"x":1180,"y":800} ], "adjacency": ["cinderfell", "scoria_gate", "kingsreach", "vael_drath"] },
+    { "id": "scoria_gate",   "name": "Scoria Gate",    "region": "ashen_marches", "position": { "x": 1620, "y": 660 }, "shape": [ {"x":1490,"y":490}, {"x":1810,"y":490}, {"x":1800,"y":800}, {"x":1490,"y":800} ], "adjacency": ["emberwatch", "ashmoor", "vael_drath"] },
+
+    { "id": "dustmar",       "name": "Dustmar",        "region": "red_wastes", "position": { "x": 720,  "y": 790 }, "shape": [ {"x":575,"y":655}, {"x":880,"y":665}, {"x":880,"y":835}, {"x":575,"y":840} ], "adjacency": ["gloomroot", "hollowfen", "bonereach"] },
+    { "id": "bonereach",     "name": "Bonereach",      "region": "red_wastes", "position": { "x": 1030, "y": 800 }, "shape": [ {"x":880,"y":665}, {"x":1180,"y":665}, {"x":1180,"y":835}, {"x":880,"y":835} ], "adjacency": ["dustmar", "scarlet_dunes", "goldmere"] },
+    { "id": "scarlet_dunes", "name": "Scarlet Dunes",  "region": "red_wastes", "position": { "x": 720,  "y": 950 }, "shape": [ {"x":575,"y":840}, {"x":880,"y":835}, {"x":880,"y":1005}, {"x":600,"y":1010}, {"x":575,"y":940} ], "adjacency": ["bonereach", "vael_drath", "kingsreach"] },
+    { "id": "vael_drath",    "name": "Vael Drath",     "region": "red_wastes", "position": { "x": 1030, "y": 950 }, "shape": [ {"x":880,"y":835}, {"x":1180,"y":835}, {"x":1170,"y":1005}, {"x":880,"y":1005} ], "adjacency": ["scarlet_dunes", "ashmoor", "scoria_gate"] }
+  ]
+}

@@ -1,0 +1,168 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+<root class="hud-bar-wrap">
+	<div class="hud-bar">
+		<div class="hud-faction">
+			@if ( HasSigil )
+			{
+				<div class="hud-sigil" style="background-image: url( @Faction.SigilPath );"></div>
+			}
+			else
+			{
+				<div class="hud-glyph" style="color: @Accent;">@Glyph</div>
+			}
+			<div class="hud-fname">
+				<div class="hud-name-main">@FactionName</div>
+				<div class="hud-name-sub">@SubLabel</div>
+			</div>
+		</div>
+
+		<div class="phase-pill">@PhaseLabel</div>
+
+		@if ( Game.InSetup )
+		{
+			<div class="hud-reinf">@Game.SetupRemainingOf( Game.CurrentPlayerId ) to place</div>
+		}
+		else if ( Game.CurrentPhase == GamePhase.Reinforce )
+		{
+			<div class="hud-reinf">Levies: @Game.PendingReinforcements</div>
+			<div class="hud-reinf">Cards: @Game.CardCountOf( Game.CurrentPlayerId )</div>
+		}
+
+		@if ( ShowDice )
+		{
+			<div class="dice-pick">
+				<span class="dice-label">DICE</span>
+				@for ( int d = 1; d <= MaxDice; d++ )
+				{
+					var dd = d;
+					<div class="dice-opt @(EffectiveDice == dd ? "on" : "")" onclick=@(() => BoardInteraction.AttackDice = dd)>@dd</div>
+				}
+			</div>
+		}
+
+		<div class="hud-spacer"></div>
+
+		@if ( ShowStepper )
+		{
+			<div class="stepper">
+				<div class="step-btn" onclick=@(() => Step( -1 ))>−</div>
+				<div class="step-val">@BoardInteraction.MoveAmount</div>
+				<div class="step-btn" onclick=@(() => Step( 1 ))>+</div>
+			</div>
+		}
+
+		@if ( !Game.CanActNow )
+		{
+			<div class="waiting">Awaiting @FactionName…</div>
+		}
+		else if ( !Game.InSetup )
+		{
+			<div class="hud-action @(ActionEnabled ? "" : "disabled")"
+				 onclick=@(() => { if ( ActionEnabled ) Game.EndPhase(); })>
+				@ActionLabel
+			</div>
+		}
+	</div>
+
+	<div class="hud-hint">@Hint</div>
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+	private Faction Faction => Game.CurrentFaction;
+
+	private string FactionName => Faction?.Name ?? "—";
+	private string Glyph => Faction?.Glyph ?? "•";
+	private string Accent => Faction?.Accent ?? "#e8dcc0";
+	private bool HasSigil => Faction != null && !string.IsNullOrEmpty( Faction.SigilPath );
+
+	private string SubLabel => Game.InSetup ? "DRAFT" : $"TURN {Game.TurnNumber}";
+
+	private string PhaseLabel
+	{
+		get
+		{
+			if ( Game.InSetup )
+				return Game.SetupStep == SetupStep.Claim ? "CLAIM" : "MUSTER";
+			return Game.CurrentPhase switch
+			{
+				GamePhase.Reinforce => "REINFORCE",
+				GamePhase.Attack => "ATTACK",
+				GamePhase.Fortify => "FORTIFY",
+				_ => ""
+			};
+		}
+	}
+
+	private bool ShowStepper => Game.CanActNow && !Game.InSetup && !Game.HasPendingAdvance &&
+		(Game.CurrentPhase == GamePhase.Reinforce || Game.CurrentPhase == GamePhase.Fortify);
+
+	private string Sel => BoardInteraction.SelectedTerritoryId;
+
+	private bool ShowDice => Game.CanActNow && !Game.InSetup && !Game.HasPendingAdvance
+		&& Game.CurrentPhase == GamePhase.Attack
+		&& Sel != null && Game.OwnerOf( Sel ) == Game.CurrentPlayerId && Game.ArmiesOf( Sel ) >= 2;
+
+	private int MaxDice => Sel == null ? 1 : System.Math.Min( Game.Data.Rules.AttackerMaxDice, System.Math.Max( 1, Game.ArmiesOf( Sel ) - 1 ) );
+	private int EffectiveDice => System.Math.Clamp( BoardInteraction.AttackDice, 1, MaxDice );
+
+	private string ActionLabel => Game.CurrentPhase == GamePhase.Fortify ? "End Turn" : "Next Phase";
+
+	private bool ActionEnabled
+	{
+		get
+		{
+			if ( Game.HasPendingAdvance )
+				return false;
+			if ( Game.CurrentPhase == GamePhase.Reinforce )
+				return Game.PendingReinforcements <= 0 && !Game.MustTradeNow;
+			return true;
+		}
+	}
+
+	private string Hint
+	{
+		get
+		{
+			if ( !Game.CanActNow )
+				return $"{FactionName} is commanding their host…";
+
+			if ( Game.HasPendingAdvance )
+				return "Decide how many armies press into the conquered land.";
+
+			if ( Game.InSetup )
+				return Game.SetupStep == SetupStep.Claim
+					? "Claim a realm — click any unclaimed land."
+					: "Muster — click your lands to place your levies.";
+
+			var sel = Sel;
+			return Game.CurrentPhase switch
+			{
+				GamePhase.Reinforce => Game.MustTradeNow
+					? "Your hand overflows — muster a card set below before deploying."
+					: "Deploy your levies — click your lands to reinforce them.",
+				GamePhase.Attack => sel != null
+					? "Choose your dice, then strike a glowing enemy hold."
+					: "Choose a land to attack from (needs 2+ armies).",
+				GamePhase.Fortify => sel != null
+					? "Send troops to an adjacent hold of yours."
+					: "Pick a land to move troops from (needs 2+ armies).",
+				_ => ""
+			};
+		}
+	}
+
+	private void Step( int delta )
+	{
+		BoardInteraction.MoveAmount = System.Math.Clamp( BoardInteraction.MoveAmount + delta, 1, 99 );
+	}
+
+	protected override int BuildHash()
+		=> System.HashCode.Combine( Game?.ViewHash ?? 0, BoardInteraction.SelectedTerritoryId, BoardInteraction.MoveAmount, BoardInteraction.AttackDice );
+}

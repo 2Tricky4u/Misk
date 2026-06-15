@@ -1,0 +1,859 @@
+// Misk — dark medieval atlas theme. Centralised here so the whole UI tree (all child
+// panels live under MiskRoot) shares one cascade. Faction/region colours are applied
+// inline from data; this file styles the chrome.
+
+$ink:        #120d0a;
+$panel:      rgba(20, 15, 11, 0.94);
+$panel-soft: rgba(34, 26, 19, 0.92);
+$border:     #6b5436;
+$gold:       #c9a24a;
+$gold-soft:  #9c813c;
+$parchment:  #c9b28a;
+$parch-dark: #8a734c;
+$text:       #e8dcc0;
+$muted:      #9a8a6a;
+$blood:      #7a1620;
+$blood-lit:  #b5303a;
+
+.misk-root {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	font-family: Georgia, "Times New Roman", serif;
+	color: $text;
+	background-color: $ink;
+	// Makes the software cursor visible AND lets the UI receive clicks across the whole screen
+	// (the s&box-canonical way to drive a mouse cursor — preferred over Mouse.Visibility, which
+	// locks input). Children that must let board clicks through set pointer-events: none locally.
+	pointer-events: all;
+
+	.screen-center {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.boot-text { font-size: 34px; color: $muted; letter-spacing: 2px; }
+
+	.error-card {
+		flex-direction: column;
+		padding: 32px 40px;
+		background-color: $panel;
+		border: 2px solid $blood;
+		border-radius: 4px;
+		max-width: 900px;
+	}
+	.error-title { font-size: 30px; color: $blood-lit; margin-bottom: 12px; }
+	.error-body { font-size: 18px; color: $text; }
+
+	// ---------------------------------------------------------------- main menu
+	.main-menu {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background-image: linear-gradient( $ink, #1d150f );
+	}
+	.mm-title {
+		font-size: 78px;
+		color: $gold;
+		letter-spacing: 10px;
+		text-shadow: 0px 4px 14px rgba(0,0,0,0.8);
+	}
+	.mm-subtitle { font-size: 22px; color: $muted; letter-spacing: 4px; margin-bottom: 46px; }
+
+	.mm-panel {
+		flex-direction: column;
+		align-items: center;
+		background-color: $panel;
+		border: 1px solid $border;
+		border-radius: 6px;
+		padding: 30px 44px;
+		min-width: 520px;
+	}
+	.mm-section-label { font-size: 15px; color: $muted; letter-spacing: 3px; margin: 6px 0 14px 0; }
+
+	.mm-button {
+		justify-content: center;
+		align-items: center;
+		width: 420px;
+		padding: 16px 0;
+		margin-bottom: 14px;
+		background-color: $panel-soft;
+		border: 1px solid $gold-soft;
+		border-radius: 4px;
+		color: $text;
+		font-size: 22px;
+		letter-spacing: 2px;
+		transition: all 0.12s ease-out;
+		&:hover { background-color: rgba(80, 62, 30, 0.95); border-color: $gold; color: #fff; }
+	}
+
+	.mm-row { flex-direction: row; justify-content: center; }
+	.mm-small-button {
+		justify-content: center;
+		align-items: center;
+		width: 64px;
+		height: 64px;
+		margin: 6px;
+		background-color: $panel-soft;
+		border: 1px solid $gold-soft;
+		border-radius: 4px;
+		font-size: 26px;
+		color: $text;
+		transition: all 0.12s ease-out;
+		&:hover { background-color: rgba(80, 62, 30, 0.95); border-color: $gold; color: #fff; }
+	}
+	.mm-joining { font-size: 24px; color: $muted; letter-spacing: 2px; }
+	.mm-status { font-size: 15px; color: $gold-soft; margin: 4px 0 12px 0; max-width: 420px; text-align: center; }
+
+	// ---------------------------------------------------------------- lobby
+	.lobby {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		background-image: linear-gradient( $ink, #1d150f );
+	}
+	.lobby-panel {
+		flex-direction: column;
+		background-color: $panel;
+		border: 1px solid $border;
+		border-radius: 6px;
+		padding: 26px 34px;
+		min-width: 880px;
+		max-width: 1100px;
+	}
+	.lobby-title { font-size: 40px; color: $gold; letter-spacing: 4px; margin-bottom: 4px; }
+	.lobby-sub { font-size: 16px; color: $muted; margin-bottom: 20px; }
+
+	.seat-list { flex-direction: column; }
+	.seat-row {
+		flex-direction: row;
+		align-items: center;
+		padding: 12px 14px;
+		margin-bottom: 10px;
+		background-color: $panel-soft;
+		border: 1px solid rgba(107, 84, 54, 0.5);
+		border-radius: 4px;
+	}
+	.seat-name { width: 190px; font-size: 20px; color: $text; }
+	.faction-chips { flex-direction: row; flex-wrap: wrap; flex-grow: 1; }
+	.faction-chip {
+		flex-direction: row;
+		align-items: center;
+		padding: 6px 12px;
+		margin: 3px;
+		background-color: rgba(0,0,0,0.35);
+		border: 1px solid rgba(107, 84, 54, 0.6);
+		border-radius: 3px;
+		font-size: 15px;
+		color: $muted;
+		transition: all 0.1s ease-out;
+		&:hover { border-color: $gold; color: $text; }
+		&.selected { border-color: $gold; color: #fff; background-color: rgba(80, 62, 30, 0.6); }
+		&.taken { opacity: 0.35; }
+	}
+	.swatch { width: 16px; height: 16px; border-radius: 2px; margin-right: 8px; border: 1px solid rgba(0,0,0,0.5); }
+	.glyph { font-size: 18px; margin-right: 6px; }
+
+	.ready-tag {
+		width: 120px;
+		justify-content: center;
+		align-items: center;
+		padding: 8px 0;
+		margin-left: 10px;
+		border-radius: 3px;
+		font-size: 15px;
+		letter-spacing: 1px;
+		border: 1px solid $gold-soft;
+		color: $text;
+		&.is-ready { background-color: rgba(47, 80, 40, 0.7); border-color: #4f7a3a; }
+		&.not-ready { background-color: rgba(0,0,0,0.3); color: $muted; }
+	}
+
+	.lobby-actions { flex-direction: row; justify-content: space-between; margin-top: 20px; }
+	.start-button {
+		justify-content: center; align-items: center;
+		padding: 14px 48px;
+		background-color: rgba(80, 62, 30, 0.9);
+		border: 1px solid $gold;
+		border-radius: 4px;
+		font-size: 22px; color: #fff; letter-spacing: 2px;
+		&:hover { background-color: rgba(110, 86, 40, 1); }
+		&.disabled { opacity: 0.35; }
+	}
+	.back-button {
+		justify-content: center; align-items: center;
+		padding: 14px 30px;
+		background-color: $panel-soft;
+		border: 1px solid $border;
+		border-radius: 4px;
+		font-size: 18px; color: $muted;
+		&:hover { color: $text; }
+	}
+
+	// ---------------------------------------------------------------- map / board
+	.map-view {
+		position: absolute; width: 100%; height: 100%; overflow: hidden;
+		// Flex-centre the board (no transform) so the cursor→canvas mapping stays 1:1.
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+	}
+	// Plain dark backdrop behind the board (fills any letterbox bars on non-16:9 screens).
+	.map-bg {
+		position: absolute; width: 100%; height: 100%;
+		background-color: #100b08;
+	}
+	// The board carries the atlas as its background (set inline), so everything is in one space.
+	.board-canvas {
+		position: relative;
+		flex-shrink: 0;
+		overflow: hidden;
+	}
+	// Dark scrim over the atlas for label readability — non-interactive, sits under the markers.
+	.board-scrim {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		pointer-events: none;
+		background-image: linear-gradient( rgba(8, 6, 4, 0.22), rgba(8, 6, 4, 0.34) );
+	}
+	// Cinematic edge darkening over the board (sits under the markers).
+	.board-vignette {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		pointer-events: none;
+		background-image: radial-gradient( rgba(8, 5, 3, 0), rgba(8, 5, 3, 0.6) );
+	}
+	// Ambient atmosphere: drifting embers + slow fog (animation-delay/duration set inline).
+	.ambient-layer {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		pointer-events: none;
+		overflow: hidden;
+	}
+	.ember {
+		position: absolute;
+		border-radius: 50%;
+		background-color: rgba(232, 168, 78, 0.9);
+		box-shadow: 0px 0px 7px rgba(230, 150, 60, 0.85);
+		animation-name: ember-rise;
+		animation-timing-function: ease-in-out;
+		animation-iteration-count: infinite;
+	}
+	.fog {
+		position: absolute;
+		left: -8%;
+		width: 58%;
+		height: 240px;
+		background-image: radial-gradient( rgba(176, 178, 186, 0.5), rgba(176, 178, 186, 0) );
+		animation-name: fog-drift;
+		animation-timing-function: ease-in-out;
+		animation-iteration-count: infinite;
+	}
+
+	.adj-line {
+		position: absolute;
+		height: 2px;
+		background-color: rgba(180, 150, 96, 0.16);
+		transform-origin: left center;
+	}
+
+	// blood / gore overlay on the most recent battlefield
+	.blood-fx {
+		position: absolute;
+		width: 150px; height: 150px;
+		transform: translate(-50%, -50%);
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: center;
+		pointer-events: none;
+		opacity: 0.85;
+		&.seize { width: 210px; height: 210px; opacity: 0.95; }
+	}
+
+	// Full-canvas transparent click surface (sibling of the action menu so menu clicks don't
+	// re-trigger a board click). Sits above the non-interactive fills/badges.
+	.board-clicks {
+		position: absolute;
+		left: 0; top: 0;
+		width: 100%; height: 100%;
+		pointer-events: all;
+	}
+
+	// Territory highlight: a white silhouette, invisible until hovered/selected/targeted, then
+	// faded in as a soft light glow over the painted map. Default state shows NO colour — owner
+	// is read from the army chip, not a blanket fill.
+	.territory-fill {
+		position: absolute;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.18s ease-out, filter 0.18s ease-out;
+	}
+	// drop-shadow hugs the silhouette's alpha, so the glow follows the territory edge.
+	.territory-fill.hovered  { opacity: 0.26; filter: drop-shadow(0px 0px 16px rgba(232, 220, 192, 0.6)); }
+	.territory-fill.selected { opacity: 0.38; filter: drop-shadow(0px 0px 20px rgba(201, 162, 74, 0.95)); }
+	.territory-fill.valid    { opacity: 0.22; filter: drop-shadow(0px 0px 14px rgba(181, 48, 58, 0.85)); }
+	.territory-fill.valid.hovered { opacity: 0.36; filter: drop-shadow(0px 0px 20px rgba(181, 48, 58, 1)); }
+
+	// Army-count chip + name, anchored at the territory's badge position (non-interactive).
+	// The chip is filled with the owner's colour, so ownership reads at a glance without a fill.
+	.centroid-badge {
+		position: absolute;
+		flex-direction: column;
+		align-items: center;
+		transform: translate(-50%, -50%);
+		pointer-events: none;
+	}
+	// With a pawn, anchor the figure's feet near the territory point (not its centre).
+	.centroid-badge.has-pawn { transform: translate(-50%, -74%); }
+
+	// The faction soldier sprite standing on the territory.
+	.pawn {
+		width: 66px;
+		height: 98px;
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: bottom center;
+		filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.75));
+		animation: idle-bob 3.4s ease-in-out infinite;
+	}
+
+	.troops {
+		justify-content: center;
+		align-items: center;
+		min-width: 42px;
+		height: 42px;
+		padding: 0px 8px;
+		border-radius: 21px;
+		border: 2px solid rgba(8, 5, 3, 0.92);
+		font-size: 23px;
+		font-weight: bold;
+		color: #fff;
+		text-shadow: 0px 1px 3px rgba(0,0,0,0.95);
+		box-shadow: 0px 2px 6px rgba(0,0,0,0.55);
+	}
+	// Smaller count chip tucked at the pawn's feet.
+	.centroid-badge.has-pawn .troops {
+		min-width: 28px; height: 28px;
+		margin-top: -12px;
+		font-size: 16px;
+		border-radius: 14px;
+	}
+	.centroid-badge .t-name {
+		margin-top: 3px;
+		font-size: 15px;
+		color: $parchment;
+		text-shadow: 0px 1px 3px rgba(0,0,0,0.95);
+	}
+	.centroid-badge.has-pawn .t-name { font-size: 12px; margin-top: 1px; }
+
+	// ---------------------------------------------------------------- board animations (transient FX)
+	.anim-layer {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		pointer-events: none;
+	}
+	// Marching / lunging detachment sprite (smaller than a garrison pawn).
+	.anim-pawn {
+		position: absolute;
+		width: 52px; height: 78px;
+		background-size: contain;
+		background-repeat: no-repeat;
+		background-position: bottom center;
+		transform: translate(-50%, -88%);
+		filter: drop-shadow(0px 3px 4px rgba(0,0,0,0.7));
+	}
+	.anim-pawn.lunge { filter: drop-shadow(0px 0px 9px rgba(181, 48, 58, 0.85)); }
+
+	// Clash flash at the defending territory (transform incl. scale set inline per frame).
+	.anim-clash {
+		position: absolute;
+		width: 130px; height: 130px;
+		border-radius: 50%;
+		background-image: radial-gradient( rgba(255, 230, 165, 0.9), rgba(201, 162, 74, 0.35), rgba(0,0,0,0) );
+	}
+	// Floating casualty number.
+	.anim-loss {
+		position: absolute;
+		transform: translate(-50%, -50%);
+		font-size: 30px;
+		font-weight: bold;
+		color: #e2424a;
+		text-shadow: 0px 2px 4px rgba(0,0,0,0.95);
+	}
+	// Expanding deploy ring (border-color + transform/scale set inline).
+	.anim-ring {
+		position: absolute;
+		width: 74px; height: 74px;
+		border-radius: 50%;
+		border: 4px solid $gold;
+	}
+	// Floating reinforcement number.
+	.anim-gain {
+		position: absolute;
+		transform: translate(-50%, -50%);
+		font-size: 26px;
+		font-weight: bold;
+		text-shadow: 0px 2px 4px rgba(0,0,0,0.95);
+	}
+	// Rolled combat dice (face value set per frame in C#).
+	.die {
+		position: absolute;
+		justify-content: center;
+		align-items: center;
+		width: 30px; height: 30px;
+		transform: translate(-50%, -50%);
+		border-radius: 5px;
+		font-size: 19px;
+		font-weight: bold;
+		text-shadow: 0px 1px 2px rgba(0,0,0,0.9);
+		box-shadow: 0px 2px 6px rgba(0,0,0,0.6);
+	}
+	.die.atk { background-color: #8a1c2b; color: #ffeede; border: 1px solid #e0566a; }
+	.die.def { background-color: #d8cdb0; color: #2b2118; border: 1px solid #8a8580; }
+
+	// Full-screen capture flash.
+	.flash-layer {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		pointer-events: none;
+		background-color: rgba(255, 240, 205, 1);
+	}
+
+	// ---------------------------------------------------------------- context action menu
+	.action-menu {
+		position: absolute;
+		transform: translate(20px, -10px);
+		pointer-events: none;
+	}
+	.am-card {
+		flex-direction: column;
+		min-width: 200px;
+		background-color: rgba(18, 13, 9, 0.97);
+		border: 1px solid $border;
+		border-radius: 5px;
+		padding: 6px;
+		box-shadow: 0px 6px 20px rgba(0,0,0,0.7);
+		pointer-events: all;
+	}
+	.am-title {
+		font-size: 15px;
+		color: $gold;
+		letter-spacing: 1px;
+		padding: 6px 8px 8px 8px;
+		border-bottom: 1px solid rgba(107, 84, 54, 0.5);
+		margin-bottom: 4px;
+	}
+	.am-item {
+		flex-direction: row;
+		align-items: center;
+		padding: 9px 10px;
+		border-radius: 4px;
+		color: $text;
+		font-size: 17px;
+		transition: all 0.1s ease-out;
+		&:hover { background-color: rgba(80, 62, 30, 0.92); color: #fff; }
+	}
+	.am-item.disabled { color: $muted; opacity: 0.5; }
+	.am-glyph { width: 24px; font-size: 17px; color: $gold-soft; }
+	.am-label { flex-grow: 1; }
+	// Pop the menu in from the cursor.
+	.am-card {
+		transition: transform 0.12s ease-out, opacity 0.12s ease-out;
+		&:intro { transform: scale( 0.86 ); opacity: 0; }
+	}
+
+	// ---------------------------------------------------------------- press feedback (juice)
+	.mm-button:active, .mm-small-button:active, .am-item:active, .victory-button:active,
+	.step-btn:active, .dice-opt:active, .muster-btn:active, .hud-action:active,
+	.end-btn:active, .faction-chip:active {
+		transform: scale( 0.96 );
+	}
+
+	// ---------------------------------------------------------------- "your turn" banner
+	.turn-banner {
+		position: absolute;
+		top: 15%; left: 0; width: 100%;
+		justify-content: center;
+		pointer-events: none;
+	}
+	.tb-card {
+		flex-direction: row;
+		align-items: center;
+		background-color: rgba(14, 10, 7, 0.93);
+		border: 2px solid $gold;
+		border-left-width: 5px; border-right-width: 5px;
+		border-radius: 6px;
+		padding: 14px 42px;
+		box-shadow: 0px 12px 38px rgba(0,0,0,0.72);
+	}
+	.tb-sigil {
+		width: 66px; height: 66px;
+		background-size: contain; background-repeat: no-repeat; background-position: center;
+		margin-right: 20px;
+	}
+	.tb-text { flex-direction: column; align-items: center; }
+	.tb-name { font-size: 44px; letter-spacing: 3px; text-shadow: 0px 3px 10px rgba(0,0,0,0.85); }
+	.tb-sub { font-size: 18px; color: $parchment; letter-spacing: 7px; margin-top: 2px; }
+
+	// ---------------------------------------------------------------- victory + combat-log juice
+	.victory { animation: fade-in 0.4s ease-out; }
+	.victory-card { animation: victory-pop 0.6s ease-out; }
+	.victory-sigil { animation: victory-glow 2.2s ease-in-out infinite; }
+	.log-line {
+		transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+		&:intro { transform: translateX( 26px ); opacity: 0; }
+	}
+
+	// ---------------------------------------------------------------- region intel box
+	.region-info {
+		position: absolute;
+		top: 104px; right: 0px;
+		width: 326px;
+		flex-direction: column;
+		pointer-events: none;
+		opacity: 0;
+		transform: translateX(44px);
+		transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+	}
+	.region-info.shown { opacity: 1; transform: translateX(0px); }
+	.ri-card {
+		flex-direction: column;
+		margin-right: 18px;
+		background-color: $panel;
+		border: 1px solid $border;
+		border-left: 3px solid $gold;
+		border-radius: 6px;
+		padding: 16px 18px;
+		box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
+	}
+	.ri-head { flex-direction: row; align-items: center; margin-bottom: 12px; }
+	.ri-sigil {
+		width: 52px; height: 52px;
+		background-size: contain; background-repeat: no-repeat; background-position: center;
+		margin-right: 12px;
+	}
+	.ri-swatch {
+		justify-content: center; align-items: center;
+		border-radius: 50%;
+		border: 2px solid rgba(0,0,0,0.5);
+		font-size: 24px; color: #fff;
+	}
+	.ri-titles { flex-direction: column; flex-grow: 1; }
+	.ri-name { font-size: 24px; color: $text; letter-spacing: 1px; }
+	.ri-region { font-size: 15px; letter-spacing: 2px; }
+	.ri-row {
+		flex-direction: row; justify-content: space-between; align-items: center;
+		padding: 5px 0px;
+		border-top: 1px solid rgba(107, 84, 54, 0.25);
+	}
+	.ri-key { font-size: 14px; color: $muted; letter-spacing: 1px; }
+	.ri-val { font-size: 16px; color: $text; }
+	.ri-borders { flex-direction: column; margin-top: 10px; }
+	.ri-border-list { flex-direction: row; flex-wrap: wrap; margin-top: 6px; }
+	.ri-border-chip {
+		padding: 3px 9px; margin: 0px 5px 5px 0px;
+		background-color: $panel-soft;
+		border: 1px solid $gold-soft;
+		border-left-width: 3px;
+		border-radius: 3px;
+		font-size: 13px; color: $text;
+	}
+
+	// ---------------------------------------------------------------- HUD
+	// The HUD is a full-screen overlay above the board, so it must NOT swallow clicks
+	// meant for the map. Disable pointer events on the overlay; re-enable on controls.
+	.hud-bar-wrap {
+		position: absolute;
+		width: 100%; height: 100%;
+		pointer-events: none;
+	}
+
+	.hud-bar {
+		position: absolute;
+		left: 0; top: 0;
+		width: 100%;
+		flex-direction: row;
+		align-items: center;
+		padding: 12px 22px;
+		background-image: linear-gradient( rgba(12,9,6,0.96), rgba(12,9,6,0.0) );
+	}
+	.hud-faction { flex-direction: row; align-items: center; min-width: 320px; }
+	.hud-glyph { font-size: 40px; margin-right: 12px; text-shadow: 0px 2px 5px rgba(0,0,0,0.8); }
+	.hud-sigil {
+		width: 56px; height: 56px; margin-right: 12px;
+		background-size: contain; background-repeat: no-repeat; background-position: center;
+	}
+	.chip-sigil {
+		width: 22px; height: 22px; margin-right: 8px;
+		background-size: contain; background-repeat: no-repeat; background-position: center;
+	}
+	.victory-sigil {
+		width: 150px; height: 150px; margin: 6px 0 4px 0;
+		background-size: contain; background-repeat: no-repeat; background-position: center;
+	}
+	.hud-fname { flex-direction: column; }
+	.hud-name-main { font-size: 26px; color: $text; }
+	.hud-name-sub { font-size: 14px; color: $muted; letter-spacing: 2px; }
+
+	.phase-pill {
+		padding: 8px 18px; margin: 0 8px;
+		background-color: $panel;
+		border: 1px solid $border; border-radius: 20px;
+		font-size: 17px; color: $gold; letter-spacing: 2px;
+	}
+	.hud-reinf { font-size: 18px; color: $text; margin: 0 10px; }
+	.hud-spacer { flex-grow: 1; }
+
+	.stepper { flex-direction: row; align-items: center; margin: 0 10px; }
+	.step-btn {
+		justify-content: center; align-items: center;
+		width: 36px; height: 36px;
+		background-color: $panel-soft; border: 1px solid $gold-soft; border-radius: 3px;
+		font-size: 22px; color: $text;
+		pointer-events: all;
+		&:hover { border-color: $gold; }
+	}
+	.step-val { width: 46px; justify-content: center; align-items: center; font-size: 22px; color: #fff; }
+
+	.hud-action {
+		justify-content: center; align-items: center;
+		padding: 12px 26px; margin-left: 10px;
+		background-color: rgba(80, 62, 30, 0.92);
+		border: 1px solid $gold; border-radius: 4px;
+		font-size: 19px; color: #fff; letter-spacing: 1px;
+		pointer-events: all;
+		&:hover { background-color: rgba(110, 86, 40, 1); }
+		&.disabled { opacity: 0.3; }
+	}
+	.waiting {
+		padding: 10px 22px; margin-left: 10px;
+		font-size: 18px; color: $muted; letter-spacing: 1px;
+	}
+	.hud-hint {
+		position: absolute;
+		left: 0; top: 86px;
+		width: 100%;
+		justify-content: center;
+		font-size: 17px; color: $parchment;
+		text-shadow: 0px 1px 3px rgba(0,0,0,0.9);
+	}
+
+	// ---------------------------------------------------------------- combat log
+	.combat-log {
+		position: absolute;
+		right: 18px; bottom: 18px;
+		width: 460px;
+		max-height: 320px;
+		flex-direction: column;
+		padding: 12px 14px;
+		background-color: rgba(12, 9, 6, 0.82);
+		border: 1px solid rgba(107, 84, 54, 0.6);
+		border-radius: 5px;
+		overflow: hidden;
+		pointer-events: none;
+	}
+	.log-title { font-size: 15px; color: $muted; letter-spacing: 3px; margin-bottom: 8px; }
+	.log-line {
+		font-size: 15px; color: $text; margin-bottom: 5px;
+		border-left: 3px solid $gold-soft; padding-left: 8px;
+		&.captured { color: #fff; border-left-color: $blood-lit; }
+	}
+
+	// ---------------------------------------------------------------- attacker dice picker
+	.dice-pick {
+		flex-direction: row;
+		align-items: center;
+		margin: 0 10px;
+		pointer-events: all;
+	}
+	.dice-label { font-size: 13px; color: $muted; letter-spacing: 2px; margin-right: 8px; }
+	.dice-opt {
+		justify-content: center; align-items: center;
+		width: 34px; height: 34px; margin: 0 3px;
+		background-color: $panel-soft; border: 1px solid $gold-soft; border-radius: 3px;
+		font-size: 18px; color: $text;
+		&:hover { border-color: $gold; }
+		&.on { background-color: rgba(110, 86, 40, 0.95); border-color: $gold; color: #fff; }
+	}
+
+	// ---------------------------------------------------------------- card tray
+	.card-tray {
+		position: absolute;
+		left: 50%; bottom: 16px;
+		transform: translateX(-50%);
+		flex-direction: column;
+		align-items: center;
+		padding: 12px 18px;
+		background-color: rgba(14, 10, 7, 0.94);
+		border: 1px solid $border;
+		border-radius: 6px;
+		pointer-events: all;
+		&.must { border-color: $blood-lit; }
+	}
+	.tray-head { flex-direction: row; align-items: center; margin-bottom: 8px; }
+	.tray-title { font-size: 18px; color: $gold; letter-spacing: 3px; margin-right: 14px; }
+	.tray-sub { font-size: 14px; color: $muted; }
+	.tray-warn { font-size: 14px; color: $blood-lit; margin-left: 14px; }
+
+	.tray-cards { flex-direction: row; }
+	.war-card {
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 96px; height: 124px;
+		margin: 5px;
+		background-color: rgba(30, 23, 17, 0.96);
+		border: 2px solid $border;
+		border-radius: 5px;
+		transition: all 0.1s ease-out;
+		&:hover { transform: translateY(-4px); }
+		&.sel { transform: translateY(-8px); box-shadow: 0px 0px 14px $gold; border-color: $gold; }
+	}
+	.wc-glyph { font-size: 40px; }
+	.wc-kind { font-size: 15px; color: $text; margin-top: 4px; }
+	.wc-terr { font-size: 12px; color: $muted; margin-top: 2px; text-align: center; }
+
+	.tray-actions { flex-direction: row; margin-top: 10px; }
+	.muster-btn {
+		justify-content: center; align-items: center;
+		padding: 10px 28px;
+		background-color: rgba(80, 62, 30, 0.92);
+		border: 1px solid $gold; border-radius: 4px;
+		font-size: 17px; color: #fff; letter-spacing: 1px;
+		&:hover { background-color: rgba(110, 86, 40, 1); }
+		&.disabled { opacity: 0.3; }
+	}
+
+	// ---------------------------------------------------------------- advance prompt
+	.advance-prompt {
+		position: absolute;
+		width: 100%; height: 100%;
+		align-items: center; justify-content: center;
+		pointer-events: none;
+	}
+	.advance-card {
+		flex-direction: column; align-items: center;
+		padding: 26px 40px;
+		background-color: rgba(14, 10, 7, 0.97);
+		border: 2px solid $gold; border-radius: 8px;
+		pointer-events: all;
+	}
+	.advance-title { font-size: 26px; color: $gold; letter-spacing: 3px; }
+	.advance-sub { font-size: 16px; color: $parchment; margin: 8px 0 16px 0; }
+	.advance-stepper { flex-direction: row; align-items: center; margin-bottom: 16px; }
+	.advance-btn {
+		justify-content: center; align-items: center;
+		padding: 12px 34px;
+		background-color: rgba(80, 62, 30, 0.92);
+		border: 1px solid $gold; border-radius: 4px;
+		font-size: 18px; color: #fff; letter-spacing: 1px;
+		&:hover { background-color: rgba(110, 86, 40, 1); }
+	}
+
+	// ---------------------------------------------------------------- test report
+	.test-report {
+		position: absolute;
+		width: 100%; height: 100%;
+		align-items: center; justify-content: center;
+		background-color: rgba(6, 4, 3, 0.985);
+		pointer-events: all;
+	}
+	.tr-fails {
+		flex-direction: column;
+		padding: 10px 12px; margin-bottom: 12px;
+		background-color: rgba(60, 12, 16, 0.55);
+		border: 1px solid $blood-lit; border-radius: 4px;
+	}
+	.tr-fail-line { font-size: 18px; color: #f0a0a8; margin: 2px 0; }
+	.tr-card {
+		flex-direction: column;
+		width: 1180px;
+		max-height: 96%;
+		padding: 18px 24px;
+		background-color: rgba(16, 12, 9, 0.98);
+		border: 1px solid $border;
+		border-radius: 6px;
+	}
+	.tr-head { flex-direction: row; align-items: center; margin-bottom: 12px; }
+	.tr-title { font-size: 24px; color: $gold; letter-spacing: 4px; }
+	.tr-score { font-size: 22px; margin-left: 20px; &.all { color: #6fc47a; } &.some { color: $blood-lit; } }
+	.tr-close {
+		width: 34px; height: 34px; margin-left: auto;
+		justify-content: center; align-items: center;
+		border: 1px solid $border; border-radius: 4px; color: $muted; font-size: 18px;
+		&:hover { color: $text; border-color: $gold; }
+	}
+	.tr-list { flex-direction: column; flex-wrap: wrap; max-height: 900px; }
+	.tr-row { flex-direction: row; align-items: center; width: 1130px; padding: 3px 0; }
+	.tr-mark {
+		width: 26px; font-size: 17px; text-align: center;
+		&.pass { color: #6fc47a; } &.fail { color: $blood-lit; }
+	}
+	.tr-name { width: 560px; font-size: 15px; color: $text; }
+	.tr-detail { flex-grow: 1; font-size: 14px; color: $muted; }
+
+	// ---------------------------------------------------------------- victory
+	.victory {
+		position: absolute; width: 100%; height: 100%;
+		align-items: center; justify-content: center;
+		background-color: rgba(8, 6, 4, 0.82);
+	}
+	.victory-card {
+		flex-direction: column; align-items: center;
+		padding: 50px 80px;
+		background-color: $panel;
+		border: 2px solid $gold; border-radius: 8px;
+	}
+	.victory-title { font-size: 30px; color: $muted; letter-spacing: 6px; }
+	.victory-faction { font-size: 72px; margin: 16px 0; text-shadow: 0px 4px 14px rgba(0,0,0,0.8); }
+	.victory-sub { font-size: 20px; color: $parchment; margin-bottom: 32px; }
+	.victory-button {
+		justify-content: center; align-items: center;
+		padding: 16px 50px;
+		background-color: rgba(80, 62, 30, 0.92);
+		border: 1px solid $gold; border-radius: 4px;
+		font-size: 22px; color: #fff; letter-spacing: 2px;
+		&:hover { background-color: rgba(110, 86, 40, 1); }
+	}
+}
+
+// ---------------------------------------------------------------- keyframes (top-level)
+@keyframes idle-bob {
+	0%   { transform: translateY( 0px ); }
+	50%  { transform: translateY( -3px ); }
+	100% { transform: translateY( 0px ); }
+}
+@keyframes ember-rise {
+	0%   { transform: translate( 0px, 0px ); opacity: 0; }
+	15%  { opacity: 0.85; }
+	80%  { opacity: 0.5; }
+	100% { transform: translate( 16px, -150px ); opacity: 0; }
+}
+@keyframes fog-drift {
+	0%   { transform: translateX( -7% ); }
+	50%  { transform: translateX( 9% ); }
+	100% { transform: translateX( -7% ); }
+}
+@keyframes fade-in {
+	0%   { opacity: 0; }
+	100% { opacity: 1; }
+}
+@keyframes victory-pop {
+	0%   { transform: scale( 0.7 ); opacity: 0; }
+	70%  { transform: scale( 1.06 ); opacity: 1; }
+	100% { transform: scale( 1 ); opacity: 1; }
+}
+@keyframes victory-glow {
+	0%   { filter: drop-shadow( 0px 0px 6px rgba(201, 162, 74, 0.5) ); }
+	50%  { filter: drop-shadow( 0px 0px 22px rgba(201, 162, 74, 0.95) ); }
+	100% { filter: drop-shadow( 0px 0px 6px rgba(201, 162, 74, 0.5) ); }
+}

@@ -1,0 +1,55 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits PanelComponent
+
+<root class="misk-root">
+	<TestReport />
+	@if ( Game is null )
+	{
+		<div class="screen-center"><div class="boot-text">Awakening the realms…</div></div>
+	}
+	else if ( Game.LoadError is not null )
+	{
+		<div class="screen-center">
+			<div class="error-card">
+				<div class="error-title">The atlas is torn</div>
+				<div class="error-body">@Game.LoadError</div>
+			</div>
+		</div>
+	}
+	else if ( Game.Mode == GameMode.MainMenu )
+	{
+		<MainMenu />
+	}
+	else if ( Game.Mode == GameMode.Lobby )
+	{
+		<LobbyScreen />
+	}
+	else
+	{
+		<MapView />
+		<RegionInfoPanel />
+		<HudBar />
+		<CombatLog />
+		<CardTray />
+		<TurnBanner />
+		<FlashLayer />
+		@if ( Game.HasPendingAdvance && Game.CanActNow )
+		{
+			<AdvancePrompt />
+		}
+		@if ( Game.Mode == GameMode.GameOver || Game.WinnerPlayerId is not null )
+		{
+			<VictoryOverlay />
+		}
+	}
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	protected override int BuildHash() => Game?.ViewHash ?? 0;
+}

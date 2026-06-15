@@ -1,0 +1,114 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+<root class="lobby">
+	<div class="lobby-panel">
+		<div class="lobby-title">War Council</div>
+		<div class="lobby-sub">@MapName  —  @ModeLabel</div>
+
+		<div class="seat-list">
+			@foreach ( var seat in Game.Seats )
+			{
+				var canEdit = Game.CanControlSeat( seat );
+				<div class="seat-row">
+					<div class="seat-name">@seat.DisplayName</div>
+
+					<div class="faction-chips">
+						@foreach ( var faction in Game.Data.Factions )
+						{
+							var takenByOther = IsTakenByOther( faction.Id, seat.PlayerId );
+							var selected = seat.FactionId == faction.Id;
+							var cls = "faction-chip"
+								+ (selected ? " selected" : "")
+								+ (takenByOther ? " taken" : "");
+							<div class="@cls"
+								 onclick=@(() => TryPick( seat, faction.Id, canEdit, takenByOther ))>
+								@if ( !string.IsNullOrEmpty( faction.SigilPath ) )
+								{
+									<div class="chip-sigil" style="background-image: url( @faction.SigilPath );"></div>
+								}
+								else
+								{
+									<div class="swatch" style="background-color: @faction.Color;"></div>
+								}
+								<span>@faction.Name</span>
+							</div>
+						}
+					</div>
+
+					<div class="ready-tag @(seat.IsReady ? "is-ready" : "not-ready")"
+						 onclick=@(() => ToggleReady( seat, canEdit ))>
+						@(seat.IsReady ? "READY" : "NOT READY")
+					</div>
+				</div>
+			}
+		</div>
+
+		<div class="lobby-actions">
+			<div class="back-button" onclick=@(() => Game.ReturnToMenu())>Abandon</div>
+			@if ( Game.IsHost )
+			{
+				<div class="start-button @(CanStart ? "" : "disabled")"
+					 onclick=@(() => { if ( CanStart ) Game.RequestStart(); })>
+					March to War
+				</div>
+			}
+			else
+			{
+				<div class="waiting">Awaiting the host…</div>
+			}
+		</div>
+	</div>
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private string MapName => Game?.Data?.Map?.Name ?? "Unknown lands";
+	private string ModeLabel => Game.IsHotseat ? "Hotseat" : "Online";
+
+	private bool IsTakenByOther( string factionId, string seatPlayerId )
+	{
+		foreach ( var s in Game.Seats )
+		{
+			if ( s.PlayerId != seatPlayerId && s.FactionId == factionId )
+				return true;
+		}
+		return false;
+	}
+
+	private void TryPick( SeatInfo seat, string factionId, bool canEdit, bool takenByOther )
+	{
+		if ( !canEdit || takenByOther )
+			return;
+		Game.RequestSetFaction( seat.PlayerId, factionId );
+	}
+
+	private void ToggleReady( SeatInfo seat, bool canEdit )
+	{
+		if ( !canEdit )
+			return;
+		Game.RequestSetReady( seat.PlayerId, !seat.IsReady );
+	}
+
+	private bool CanStart
+	{
+		get
+		{
+			if ( Game.Seats.Count < 2 )
+				return false;
+			foreach ( var s in Game.Seats )
+			{
+				if ( string.IsNullOrEmpty( s.FactionId ) || !s.IsReady )
+					return false;
+			}
+			return true;
+		}
+	}
+
+	protected override int BuildHash() => Game?.ViewHash ?? 0;
+}

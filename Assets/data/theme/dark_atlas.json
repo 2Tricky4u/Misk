@@ -1,0 +1,28 @@
+{
+  "id": "dark_atlas",
+  "name": "Dark Atlas",
+  "mapBackground": null,
+  "colors": {
+    "parchment": "#c9b28a",
+    "parchmentDark": "#9c855f",
+    "ink": "#2b2118",
+    "panel": "#171210",
+    "panelLight": "#2a201a",
+    "panelBorder": "#6b5436",
+    "gold": "#c9a24a",
+    "danger": "#8a1c1c",
+    "blood": "#5e1018",
+    "textLight": "#e8dcc0",
+    "textMuted": "#9a8a6a"
+  },
+  "fonts": {
+    "display": "Georgia",
+    "body": "Georgia"
+  },
+  "cards": {
+    "footmen": { "name": "Footmen", "glyph": "⚔", "color": "#9aa0a6" },
+    "riders":  { "name": "Riders",  "glyph": "♞", "color": "#c08a4a" },
+    "siege":   { "name": "Siege",   "glyph": "⚙", "color": "#8a8580" },
+    "banner":  { "name": "Banner",  "glyph": "⚑", "color": "#c9a24a" }
+  }
+}

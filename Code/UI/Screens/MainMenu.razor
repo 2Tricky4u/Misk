@@ -1,0 +1,45 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@namespace Misk.UI
+@inherits Panel
+
+<root class="main-menu">
+	<div class="mm-title">MISK</div>
+	<div class="mm-subtitle">THE SUNDERING REALMS</div>
+
+	@if ( IsGuest )
+	{
+		<div class="mm-joining">Joining the host's war council…</div>
+	}
+	else
+	{
+		<div class="mm-panel">
+			<div class="mm-section-label">ONLINE</div>
+			<div class="mm-button" onclick=@(() => Game.StartOnlineHosting())>Host a War</div>
+			<div class="mm-button" onclick=@(() => Game.JoinAny())>Join a War</div>
+			@if ( !string.IsNullOrEmpty( Game.JoinStatus ) )
+			{
+				<div class="mm-status">@Game.JoinStatus</div>
+			}
+
+			<div class="mm-section-label">HOTSEAT — CHOOSE WARLORDS</div>
+			<div class="mm-row">
+				@for ( int i = 2; i <= MaxSeats; i++ )
+				{
+					var count = i;
+					<div class="mm-small-button" onclick=@(() => Game.StartHotseatSetup( count ))>@count</div>
+				}
+			</div>
+		</div>
+	}
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private bool IsGuest => Networking.IsActive && !Networking.IsHost;
+	private int MaxSeats => System.Math.Min( 6, Game?.Data?.Factions.Count ?? 6 );
+
+	protected override int BuildHash() => System.HashCode.Combine( Game?.ViewHash ?? 0, IsGuest, Game?.JoinStatus );
+}

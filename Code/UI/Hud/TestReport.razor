@@ -1,0 +1,43 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Misk.Debugging
+@namespace Misk.UI
+@inherits Panel
+
+@if ( MiskTest.Show )
+{
+	var fails = MiskTest.Results.Where( r => !r.Pass ).ToList();
+	<root class="test-report">
+		<div class="tr-card">
+			<div class="tr-head">
+				<span class="tr-title">DOMAIN VERIFICATION</span>
+				<span class="tr-score @(MiskTest.Passed == MiskTest.Total ? "all" : "some")">@MiskTest.Passed / @MiskTest.Total passed</span>
+				<div class="tr-close" onclick=@(() => MiskTest.Show = false)>✕</div>
+			</div>
+			@if ( fails.Count > 0 )
+			{
+				<div class="tr-fails">
+					@foreach ( var r in fails )
+					{
+						<div class="tr-fail-line">✗ @r.Name  —  @r.Detail</div>
+					}
+				</div>
+			}
+			<div class="tr-list">
+				@foreach ( var r in MiskTest.Results )
+				{
+					<div class="tr-row">
+						<span class="tr-mark @(r.Pass ? "pass" : "fail")">@(r.Pass ? "✓" : "✗")</span>
+						<span class="tr-name">@r.Name</span>
+						<span class="tr-detail">@r.Detail</span>
+					</div>
+				}
+			</div>
+		</div>
+	</root>
+}
+
+@code {
+	protected override int BuildHash() => System.HashCode.Combine( MiskTest.Show, MiskTest.Results.Count, MiskTest.Passed );
+}

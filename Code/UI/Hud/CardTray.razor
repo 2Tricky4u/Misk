@@ -1,0 +1,83 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+@{
+	var hand = Game.MyHand;
+}
+@if ( ShouldShow( hand ) )
+{
+	<root class="card-tray @(Game.MustTradeNow ? "must" : "")">
+		<div class="tray-head">
+			<span class="tray-title">War Spoils</span>
+			<span class="tray-sub">Next muster: @Game.NextSetValue levies · @Game.CardSetsTradedIn sets given</span>
+			@if ( Game.MustTradeNow )
+			{
+				<span class="tray-warn">Your hand is full — you must muster a set</span>
+			}
+		</div>
+
+		<div class="tray-cards">
+			@foreach ( var card in hand )
+			{
+				var style = Game.Theme.Card( card.Kind.ToString().ToLowerInvariant() );
+				var selected = BoardInteraction.SelectedCardIds.Contains( card.Id );
+				<div class="war-card @(selected ? "sel" : "")" style="border-color: @style.Color;"
+					 onclick=@(() => BoardInteraction.ToggleCard( card.Id ))>
+					<div class="wc-glyph" style="color: @style.Color;">@style.Glyph</div>
+					<div class="wc-kind">@style.Name</div>
+					<div class="wc-terr">@TerritoryName( card.TerritoryId )</div>
+				</div>
+			}
+		</div>
+
+		<div class="tray-actions">
+			<div class="muster-btn @(CanMuster ? "" : "disabled")"
+				 onclick=@(() => { if ( CanMuster ) Muster(); })>
+				Muster Set  (+@Game.NextSetValue)
+			</div>
+		</div>
+	</root>
+}
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private bool ShouldShow( IReadOnlyList<MiskGame.CardView> hand )
+		=> Game != null && Game.Mode == GameMode.InGame && !Game.InSetup && Game.CanActNow
+		   && Game.CurrentPhase == GamePhase.Reinforce && hand.Count > 0;
+
+	private string TerritoryName( string id )
+		=> id == null ? "—" : (Game.Map?.Territory( id )?.Name ?? id);
+
+	private bool CanMuster
+	{
+		get
+		{
+			var ids = BoardInteraction.SelectedCardIds;
+			if ( ids.Count != 3 )
+				return false;
+
+			var hand = Game.MyHand;
+			var picked = ids.Select( id => hand.FirstOrDefault( c => c.Id == id ) ).ToList();
+			if ( picked.Any( c => c.Id == null ) )
+				return false;
+
+			var cards = picked.Select( c => new Card( c.Id, c.Kind, c.TerritoryId ) ).ToList();
+			return CardSetEvaluator.IsValidSet( cards[0], cards[1], cards[2] );
+		}
+	}
+
+	private void Muster()
+	{
+		Game.TradeCards( BoardInteraction.SelectedCardIds.ToArray() );
+		BoardInteraction.ClearCards();
+	}
+
+	protected override int BuildHash()
+		=> System.HashCode.Combine( Game?.ViewHash ?? 0, BoardInteraction.SelectedCardIds.Count );
+}

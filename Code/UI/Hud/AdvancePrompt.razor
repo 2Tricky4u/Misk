@@ -1,0 +1,48 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@namespace Misk.UI
+@inherits Panel
+
+<root class="advance-prompt">
+	<div class="advance-card">
+		<div class="advance-title">Press the Advance</div>
+		<div class="advance-sub">Pour your host into @ToName  (@Min–@Max)</div>
+		<div class="advance-stepper">
+			<div class="step-btn" onclick=@(() => Step( -1 ))>−</div>
+			<div class="step-val">@Amount</div>
+			<div class="step-btn" onclick=@(() => Step( 1 ))>+</div>
+		</div>
+		<div class="advance-btn" onclick=@Confirm>Send forth @Amount</div>
+	</div>
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private int Min => Game.PendingAdvanceMin;
+	private int Max => Game.PendingAdvanceMax;
+	private int _amount = -1;
+
+	private int Amount
+	{
+		get
+		{
+			if ( _amount < Min ) _amount = Min;
+			if ( _amount > Max ) _amount = Max;
+			return _amount;
+		}
+	}
+
+	private string ToName => Game.Map?.Territory( Game.PendingAdvanceTo )?.Name ?? "the realm";
+
+	private void Step( int delta ) => _amount = System.Math.Clamp( Amount + delta, Min, Max );
+
+	private void Confirm()
+	{
+		Game.Advance( Amount );
+		_amount = -1;
+	}
+
+	protected override int BuildHash() => System.HashCode.Combine( Game?.ViewHash ?? 0, _amount );
+}

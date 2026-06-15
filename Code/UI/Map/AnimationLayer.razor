@@ -1,0 +1,141 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Collections.Generic
+@using System.Linq
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+@* Plays the short-lived board effects queued in MiskGame.ActiveEffects. Lives inside the
+   board-canvas so it shares the 1920x1080 coordinate space with the territories. Everything is
+   C#-interpolated from each effect's elapsed time (no CSS keyframes), so re-rendering every frame
+   is safe. Non-interactive. *@
+<root class="anim-layer">
+	@foreach ( var fx in Effects )
+	{
+		float el = Time.Now - fx.StartTime;
+		float dur = Duration( fx.Kind );
+		if ( el < 0 || el > dur ) { continue; }
+		float t = el / dur;
+		var from = Pos( fx.FromId );
+		var to = Pos( fx.ToId );
+
+		if ( fx.Kind == MiskGame.BoardEffectKind.Move )
+		{
+			var unit = UnitOf( fx.PlayerId );
+			if ( unit != null )
+			{
+				float e = Smooth( t );
+				float x = from.X + ( to.X - from.X ) * e;
+				float y = from.Y + ( to.Y - from.Y ) * e;
+				float o = Clamp01( System.Math.Min( t * 8f, ( 1f - t ) * 8f ) );
+				<div class="anim-pawn" style="left: @F(x)px; top: @F(y)px; opacity: @F(o); background-image: url( @unit );"></div>
+			}
+		}
+		else if ( fx.Kind == MiskGame.BoardEffectKind.Combat )
+		{
+			var unit = UnitOf( fx.PlayerId );
+			float lunge = Smooth( System.Math.Min( t / 0.35f, 1f ) ) * 0.6f;
+			float lx = from.X + ( to.X - from.X ) * lunge;
+			float ly = from.Y + ( to.Y - from.Y ) * lunge;
+			float lo = t < 0.5f ? 1f : Clamp01( ( 1f - t ) * 2f );
+			float sScale = 0.5f + t * 1.9f;
+			float sO = Clamp01( 1f - t * 1.4f );
+			float lossO = Clamp01( 1f - t );
+			float dY = to.Y - 40f - t * 60f;
+			float aY = from.Y - 40f - t * 60f;
+
+			<div class="anim-clash" style="left: @F(to.X)px; top: @F(to.Y)px; opacity: @F(sO); transform: translate(-50%, -55%) scale(@F(sScale));"></div>
+			if ( unit != null )
+			{
+				<div class="anim-pawn lunge" style="left: @F(lx)px; top: @F(ly)px; opacity: @F(lo); background-image: url( @unit );"></div>
+			}
+			if ( fx.Amount > 0 )
+			{
+				<div class="anim-loss" style="left: @F(to.X)px; top: @F(dY)px; opacity: @F(lossO);">−@fx.Amount</div>
+			}
+			if ( fx.Amount2 > 0 )
+			{
+				<div class="anim-loss" style="left: @F(from.X)px; top: @F(aY)px; opacity: @F(lossO);">−@fx.Amount2</div>
+			}
+			float diceO = Clamp01( System.Math.Min( t * 6f, ( 1f - t ) * 3f ) );
+			if ( fx.AttackerDice != null )
+			{
+				for ( int di = 0; di < fx.AttackerDice.Length; di++ )
+				{
+					int face = t < 0.55f ? 1 + (int)( ( Time.Now * 23f + di * 5f ) % 6f ) : fx.AttackerDice[di];
+					float dx = to.X - ( fx.AttackerDice.Length - 1 ) * 17f + di * 34f;
+					<div class="die atk" style="left: @F(dx)px; top: @F(to.Y - 98f)px; opacity: @F(diceO);">@face</div>
+				}
+			}
+			if ( fx.DefenderDice != null )
+			{
+				for ( int di = 0; di < fx.DefenderDice.Length; di++ )
+				{
+					int face = t < 0.55f ? 1 + (int)( ( Time.Now * 19f + di * 7f ) % 6f ) : fx.DefenderDice[di];
+					float dx = to.X - ( fx.DefenderDice.Length - 1 ) * 17f + di * 34f;
+					<div class="die def" style="left: @F(dx)px; top: @F(to.Y - 60f)px; opacity: @F(diceO);">@face</div>
+				}
+			}
+		}
+		else if ( fx.Kind == MiskGame.BoardEffectKind.Deploy )
+		{
+			float ringScale = 0.3f + t * 1.7f;
+			float ringO = Clamp01( 1f - t * 1.3f );
+			float gainO = Clamp01( 1f - t );
+			float gY = to.Y - 30f - t * 52f;
+			var accent = AccentOf( fx.PlayerId );
+			<div class="anim-ring" style="left: @F(to.X)px; top: @F(to.Y)px; opacity: @F(ringO); transform: translate(-50%, -50%) scale(@F(ringScale)); border-color: @accent;"></div>
+			<div class="anim-gain" style="left: @F(to.X)px; top: @F(gY)px; opacity: @F(gainO); color: @accent;">+@fx.Amount</div>
+		}
+	}
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+	private GameMap Map => Game?.Map;
+
+	// Empty (no rendering) until a game with a map exists, so the markup needs no null guard.
+	private IEnumerable<MiskGame.BoardEffect> Effects =>
+		Map == null ? Enumerable.Empty<MiskGame.BoardEffect>() : Game.ActiveEffects;
+
+	private static float Duration( MiskGame.BoardEffectKind k ) => k switch
+	{
+		MiskGame.BoardEffectKind.Move => 0.8f,
+		MiskGame.BoardEffectKind.Combat => 1.3f,
+		MiskGame.BoardEffectKind.Deploy => 0.9f,
+		_ => 1f,
+	};
+
+	private string UnitOf( string playerId )
+	{
+		var f = Game.FactionOf( playerId );
+		return string.IsNullOrEmpty( f?.UnitPath ) ? null : f.UnitPath;
+	}
+
+	private string AccentOf( string playerId ) => Game.FactionOf( playerId )?.Accent ?? "#e8dcc0";
+
+	private MapPoint Pos( string id )
+	{
+		var t = string.IsNullOrEmpty( id ) ? null : Map?.Territory( id );
+		return t?.Position ?? default;
+	}
+
+	private static float Clamp01( float v ) => System.Math.Clamp( v, 0f, 1f );
+	private static float Smooth( float t ) { t = Clamp01( t ); return t * t * ( 3f - 2f * t ); }
+	private static string F( float v ) => v.ToString( "0.##", System.Globalization.CultureInfo.InvariantCulture );
+
+	public override void Tick()
+	{
+		Game?.PruneEffects( 2.0f );
+	}
+
+	private bool AnyActive => Map != null && Game.ActiveEffects.Any( e => Time.Now - e.StartTime < Duration( e.Kind ) );
+
+	protected override int BuildHash()
+	{
+		int frame = AnyActive ? (int)( Time.Now * 30f ) : 0;
+		return System.HashCode.Combine( Game?.EffectVersion ?? 0, frame );
+	}
+}

@@ -1,0 +1,66 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Collections.Generic
+@using System.Globalization
+@namespace Misk.UI
+@inherits Panel
+
+@* Atmosphere over the board: drifting ember motes and slow fog banks. Purely decorative and
+   non-interactive; CSS @keyframes loop forever, so this builds once (constant BuildHash) and the
+   engine animates it without re-rendering. *@
+<root class="ambient-layer">
+	@foreach ( var e in Embers )
+	{
+		<div class="ember" style="@e"></div>
+	}
+	@foreach ( var f in Fogs )
+	{
+		<div class="fog" style="@f"></div>
+	}
+</root>
+
+@code {
+	private static readonly List<string> Embers = BuildEmbers();
+	private static readonly List<string> Fogs = BuildFogs();
+
+	private static List<string> BuildEmbers()
+	{
+		var ci = CultureInfo.InvariantCulture;
+		var list = new List<string>();
+		uint seed = 1234567u;
+		float Rnd() { seed = seed * 1664525u + 1013904223u; return ( ( seed >> 8 ) % 1000 ) / 1000f; }
+		for ( int i = 0; i < 18; i++ )
+		{
+			float x = 6f + Rnd() * 88f;
+			float y = 28f + Rnd() * 66f;
+			int s = 3 + (int)( Rnd() * 4 );
+			float d = Rnd() * 8f;
+			float dur = 6f + Rnd() * 6f;
+			list.Add( $"left: {x.ToString( "0.#", ci )}%; top: {y.ToString( "0.#", ci )}%; " +
+				$"width: {s}px; height: {s}px; " +
+				$"animation-delay: -{d.ToString( "0.#", ci )}s; animation-duration: {dur.ToString( "0.#", ci )}s;" );
+		}
+		return list;
+	}
+
+	private static List<string> BuildFogs()
+	{
+		var ci = CultureInfo.InvariantCulture;
+		var list = new List<string>();
+		uint seed = 99u;
+		float Rnd() { seed = seed * 1664525u + 1013904223u; return ( ( seed >> 8 ) % 1000 ) / 1000f; }
+		for ( int i = 0; i < 3; i++ )
+		{
+			float y = 14f + i * 27f + Rnd() * 8f;
+			float o = 0.05f + Rnd() * 0.05f;
+			float d = Rnd() * 30f;
+			float dur = 42f + Rnd() * 28f;
+			list.Add( $"top: {y.ToString( "0.#", ci )}%; opacity: {o.ToString( "0.##", ci )}; " +
+				$"animation-delay: -{d.ToString( "0.#", ci )}s; animation-duration: {dur.ToString( "0.#", ci )}s;" );
+		}
+		return list;
+	}
+
+	// CSS loops run on their own; never needs to re-render.
+	protected override int BuildHash() => 1;
+}

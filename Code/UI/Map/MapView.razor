@@ -1,0 +1,294 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+<root class="map-view">
+	@{ SyncSelection(); }
+	<div class="map-bg"></div>
+
+	@* The atlas is the board-canvas's OWN background, so the painted map, the sectors, the chips
+	   and the cursor hit-test all live in one 1920x1080 space and stay aligned at any resolution. *@
+	<div class="board-canvas" @ref="Canvas" style="width: @(Width)px; height: @(Height)px; @BackgroundStyle">
+		<div class="board-scrim"></div>
+		<AmbientLayer />
+		<div class="board-vignette"></div>
+		@foreach ( var edge in BuildEdges() )
+		{
+			<div class="adj-line"
+				 style="left: @(edge.X.ToString("0.#"))px; top: @(edge.Y.ToString("0.#"))px; width: @(edge.Length.ToString("0.#"))px; transform: rotate(@(edge.Angle.ToString("0.#"))deg);"></div>
+		}
+
+		@* Region cells: a colour-tinted panel clipped to the territory polygon via an SVG mask. *@
+		@foreach ( var t in Map.Territories.Where( ter => ter.HasShape ) )
+		{
+			<div class="territory-fill @FillClasses( t )" style="@FillStyle( t )"></div>
+		}
+
+		@if ( BloodTerritory is { } bt )
+		{
+			<div class="blood-fx @(Game.LastCombatCaptured ? "seize" : "")"
+				 style="left: @(bt.Position.X.ToString("0.#"))px; top: @(bt.Position.Y.ToString("0.#"))px; background-image: url( @BloodUrl );"></div>
+		}
+
+		@* Garrison markers: the owner's faction pawn (if any) + an army-count chip + name. *@
+		@foreach ( var t in Map.Territories )
+		{
+			var unit = UnitOf( t.Id );
+			<div class="centroid-badge @(unit != null ? "has-pawn" : "")" style="left: @(t.Position.X.ToString("0.#"))px; top: @(t.Position.Y.ToString("0.#"))px;">
+				@if ( unit != null )
+				{
+					<div class="pawn" style="background-image: url( @unit ); animation-delay: -@(PawnDelay( t.Id ))s;"></div>
+				}
+				<div class="troops" style="background-color: @Game.OwnerColor( t.Id );">@Game.ArmiesOf( t.Id )</div>
+				<div class="t-name">@t.Name</div>
+			</div>
+		}
+
+		<AnimationLayer />
+
+		@* Click surface — a sibling of the action menu (not its ancestor), so menu-button clicks
+		   bubble up to the canvas (which has no handler) and never re-trigger a board click. *@
+		<div class="board-clicks" onclick=@OnCanvasClick></div>
+
+		<TerritoryActionMenu />
+	</div>
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+	private GameMap Map => Game.Map;
+
+	private Panel Canvas;
+
+	// A stable per-territory idle-bob phase offset (0..3.0s) so pawns don't breathe in lockstep.
+	private static string PawnDelay( string id )
+	{
+		int h = System.Math.Abs( System.StringComparer.Ordinal.GetHashCode( id ) );
+		return ( ( h % 30 ) / 10f ).ToString( "0.#", System.Globalization.CultureInfo.InvariantCulture );
+	}
+
+	// The owning faction's pawn sprite for a territory, or null when unclaimed / no art.
+	private string UnitOf( string territoryId )
+	{
+		var owner = Game.OwnerOf( territoryId );
+		if ( owner == null )
+			return null;
+		var f = Game.FactionOf( owner );
+		return string.IsNullOrEmpty( f?.UnitPath ) ? null : f.UnitPath;
+	}
+
+	private int Width => (int)Map.CanvasWidth;
+	private int Height => (int)Map.CanvasHeight;
+
+	private string _lastPlayer;
+	private int _lastPhase = -1;
+
+	private Territory BloodTerritory =>
+		string.IsNullOrEmpty( Game.LastCombatTerritoryId ) ? null : Map.Territory( Game.LastCombatTerritoryId );
+
+	// Splatter on a seize, slash on a repelled assault.
+	private string BloodUrl => Game.LastCombatCaptured
+		? "data/theme/fx/blood_splatter.svg"
+		: "data/theme/fx/blood_slash.svg";
+
+	private string BackgroundStyle
+	{
+		get
+		{
+			var path = Map.BackgroundPath ?? Game.Theme.MapBackground;
+			return string.IsNullOrEmpty( path ) ? "" : $"background-image: url( {path} ); background-size: cover;";
+		}
+	}
+
+	// ---------------------------------------------------------------- region cell rendering
+
+	// Builds the inline style for a territory highlight: a panel sized to the polygon's bounding
+	// box, showing the territory's white silhouette SVG (background-image — s&box renders these
+	// reliably). It's invisible by default; the .hovered/.selected/.valid CSS states fade it in
+	// as a soft, light glow. The silhouette is generated from the JSON polygon (see gen script).
+	private string FillStyle( Territory t )
+	{
+		var shape = t.Shape;
+		float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+		foreach ( var p in shape )
+		{
+			if ( p.X < minX ) minX = p.X;
+			if ( p.X > maxX ) maxX = p.X;
+			if ( p.Y < minY ) minY = p.Y;
+			if ( p.Y > maxY ) maxY = p.Y;
+		}
+		int w = (int)(maxX - minX), h = (int)(maxY - minY);
+
+		return $"left: {(int)minX}px; top: {(int)minY}px; width: {w}px; height: {h}px; " +
+			$"background-image: url( data/theme/maps/territories/{t.Id}.svg ); " +
+			$"background-size: contain; background-repeat: no-repeat; background-position: center;";
+	}
+
+	private string FillClasses( Territory t )
+	{
+		var cls = "";
+		if ( BoardInteraction.SelectedTerritoryId == t.Id ) cls += " selected";
+		else if ( BoardInteraction.HoveredTerritoryId == t.Id ) cls += " hovered";
+		if ( IsValidTarget( t.Id ) ) cls += " valid";
+		return cls;
+	}
+
+	// ---------------------------------------------------------------- hover hit-testing
+
+	// Each frame, find which polygon the cursor lies in. We normalise the window cursor against
+	// the board's actual on-screen rectangle, then scale to canvas units — this is resolution-
+	// and scale-independent, and because the atlas IS the board's background, the rect the user
+	// sees painted is exactly the rect we test against. (No transform on the board keeps Box.Rect
+	// honest.)
+	public override void Tick()
+	{
+		if ( Game?.Map == null || Canvas == null )
+			return;
+
+		var rect = Canvas.Box.Rect;
+		if ( rect.Width <= 0 || rect.Height <= 0 )
+			return;
+
+		var m = Mouse.Position;
+		float cx = ( m.x - rect.Left ) / rect.Width * Width;
+		float cy = ( m.y - rect.Top ) / rect.Height * Height;
+
+		string hovered = null;
+		if ( cx >= 0 && cy >= 0 && cx <= Width && cy <= Height )
+		{
+			var pt = new MapPoint( cx, cy );
+			foreach ( var t in Map.Territories )
+			{
+				if ( t.ContainsPoint( pt ) )
+				{
+					hovered = t.Id;
+					break;
+				}
+			}
+		}
+
+		if ( BoardInteraction.HoveredTerritoryId != hovered )
+			BoardInteraction.HoveredTerritoryId = hovered;
+	}
+
+	// ---------------------------------------------------------------- click routing
+
+	private void OnCanvasClick()
+	{
+		var id = BoardInteraction.HoveredTerritoryId;
+
+		// Clicking empty sea dismisses the menu.
+		if ( id == null )
+		{
+			BoardInteraction.CloseMenu();
+			return;
+		}
+
+		// Fast path: a source is already chosen and this is a legal target — execute the move
+		// straight away rather than reopening the menu.
+		var src = BoardInteraction.SelectedTerritoryId;
+		if ( !Game.InSetup && src != null && src != id && IsValidTarget( id ) )
+		{
+			ResolveTarget( src, id );
+			return;
+		}
+
+		// Otherwise open the context action menu on this territory.
+		BoardInteraction.ActionMenuTerritoryId = id;
+	}
+
+	// Carries out a March (attack) or Fortify from the chosen source onto the clicked target,
+	// reusing the HUD's dice / move-amount selectors.
+	private void ResolveTarget( string src, string id )
+	{
+		if ( Game.CurrentPhase == GamePhase.Attack )
+		{
+			int maxDice = System.Math.Min( Game.Data.Rules.AttackerMaxDice, System.Math.Max( 1, Game.ArmiesOf( src ) - 1 ) );
+			int dice = System.Math.Clamp( BoardInteraction.AttackDice, 1, maxDice );
+			Game.Attack( src, id, dice );
+			// Keep the source selected so the player can keep pressing the assault.
+		}
+		else if ( Game.CurrentPhase == GamePhase.Fortify )
+		{
+			int amount = System.Math.Clamp( BoardInteraction.MoveAmount, 1, System.Math.Max( 1, Game.ArmiesOf( src ) - 1 ) );
+			Game.Fortify( src, id, amount );
+			BoardInteraction.SelectedTerritoryId = null;
+		}
+
+		BoardInteraction.CloseMenu();
+	}
+
+	// ---------------------------------------------------------------- helpers
+
+	private struct Edge { public float X, Y, Length, Angle; }
+
+	private List<Edge> BuildEdges()
+	{
+		var edges = new List<Edge>();
+		foreach ( var t in Map.Territories )
+		{
+			foreach ( var adjId in t.AdjacentIds )
+			{
+				// Draw each undirected edge once.
+				if ( string.CompareOrdinal( t.Id, adjId ) >= 0 )
+					continue;
+
+				var other = Map.Territory( adjId );
+				if ( other == null )
+					continue;
+
+				float dx = other.Position.X - t.Position.X;
+				float dy = other.Position.Y - t.Position.Y;
+				float length = (float)System.Math.Sqrt( dx * dx + dy * dy );
+				float angle = (float)(System.Math.Atan2( dy, dx ) * 180.0 / System.Math.PI);
+
+				edges.Add( new Edge { X = t.Position.X, Y = t.Position.Y - 1.5f, Length = length, Angle = angle } );
+			}
+		}
+		return edges;
+	}
+
+	// Clears the local selection/menu when it would no longer make sense (turn/phase changed).
+	private void SyncSelection()
+	{
+		if ( _lastPlayer != Game.CurrentPlayerId || _lastPhase != (int)Game.CurrentPhase )
+		{
+			BoardInteraction.Clear();
+			_lastPlayer = Game.CurrentPlayerId;
+			_lastPhase = (int)Game.CurrentPhase;
+		}
+	}
+
+	private bool IsValidTarget( string id )
+	{
+		if ( !Game.CanActNow )
+			return false;
+
+		if ( Game.InSetup )
+		{
+			return Game.SetupStep == SetupStep.Claim
+				? Game.OwnerOf( id ) == null
+				: Game.OwnerOf( id ) == Game.CurrentPlayerId;
+		}
+
+		var sel = BoardInteraction.SelectedTerritoryId;
+		if ( sel == null )
+			return false;
+
+		if ( Game.CurrentPhase == GamePhase.Attack )
+			return Game.OwnerOf( id ) != Game.CurrentPlayerId && Map.AreAdjacent( sel, id );
+
+		if ( Game.CurrentPhase == GamePhase.Fortify )
+			return id != sel && Game.OwnerOf( id ) == Game.CurrentPlayerId && Map.AreAdjacent( sel, id );
+
+		return false;
+	}
+
+	protected override int BuildHash()
+		=> System.HashCode.Combine( Game?.ViewHash ?? 0, BoardInteraction.SelectedTerritoryId,
+			BoardInteraction.HoveredTerritoryId, BoardInteraction.ActionMenuTerritoryId, BoardInteraction.MoveAmount );
+}

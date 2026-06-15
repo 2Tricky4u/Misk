@@ -1,0 +1,40 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Globalization
+@using Misk.Presentation
+@namespace Misk.UI
+@inherits Panel
+
+@* Full-screen warm flash on a capture (MiskGame.LastFlashTime). Non-interactive; C#-interpolated. *@
+@{ float o = FlashOpacity; }
+@if ( o > 0.001f )
+{
+	<root class="flash-layer" style="opacity: @F(o);"></root>
+}
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+	private const float Dur = 0.4f;
+
+	private float Elapsed => Game == null ? 999f : Time.Now - Game.LastFlashTime;
+
+	private float FlashOpacity
+	{
+		get
+		{
+			float el = Elapsed;
+			if ( el < 0f || el > Dur )
+				return 0f;
+			return ( 1f - el / Dur ) * 0.5f;
+		}
+	}
+
+	private static string F( float v ) => v.ToString( "0.##", CultureInfo.InvariantCulture );
+
+	protected override int BuildHash()
+	{
+		bool active = FlashOpacity > 0.001f;
+		int frame = active ? (int)( Time.Now * 30f ) : 0;
+		return System.HashCode.Combine( Game?.LastFlashTime ?? 0f, frame );
+	}
+}

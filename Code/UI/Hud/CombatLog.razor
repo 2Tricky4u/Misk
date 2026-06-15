@@ -1,0 +1,29 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@namespace Misk.UI
+@inherits Panel
+
+<root class="combat-log">
+	<div class="log-title">CHRONICLE OF BLOOD</div>
+	@foreach ( var line in RecentLines() )
+	{
+		<div class="log-line @(line.Captured ? "captured" : "")" style="border-left-color: @line.AccentHex;">
+			@line.Message
+		</div>
+	}
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private IEnumerable<CombatLogLine> RecentLines()
+	{
+		var log = Game.CombatLog;
+		int start = System.Math.Max( 0, log.Count - 8 );
+		for ( int i = start; i < log.Count; i++ )
+			yield return log[i];
+	}
+
+	protected override int BuildHash() => System.HashCode.Combine( Game?.CombatLog.Count ?? 0, Game?.StateVersion ?? 0 );
+}

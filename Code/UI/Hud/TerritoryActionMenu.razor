@@ -1,0 +1,114 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+@* Context action menu opened by clicking a territory. Lives inside the board-canvas so it
+   positions in canvas coordinates (no screen-scale maths) and its clicks bubble to the canvas,
+   not the board click-surface. Lists only the verbs that make sense for the current phase. *@
+@if ( Territory is { } t )
+{
+	<root class="action-menu" style="left: @(t.Position.X.ToString("0.#"))px; top: @(t.Position.Y.ToString("0.#"))px;">
+		<div class="am-card">
+			<div class="am-title">@t.Name</div>
+			@foreach ( var item in Items() )
+			{
+				<div class="am-item @(item.Enabled ? "" : "disabled")" onclick=@(() => Invoke( item ))>
+					<span class="am-glyph">@item.Glyph</span><span class="am-label">@item.Label</span>
+				</div>
+			}
+		</div>
+	</root>
+}
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private struct Item { public string Label; public string Glyph; public System.Action Do; public bool Enabled; }
+
+	private Territory Territory
+	{
+		get
+		{
+			var id = BoardInteraction.ActionMenuTerritoryId;
+			return ( id == null || Game?.Map == null ) ? null : Game.Map.Territory( id );
+		}
+	}
+
+	private bool Mine => Territory != null && Game.OwnerOf( Territory.Id ) == Game.CurrentPlayerId;
+	private int Garrison => Territory != null ? Game.ArmiesOf( Territory.Id ) : 0;
+	private int DeployCount => System.Math.Clamp( BoardInteraction.MoveAmount, 1, System.Math.Max( 1, Game.PendingReinforcements ) );
+
+	private List<Item> Items()
+	{
+		var list = new List<Item>();
+		var t = Territory;
+		if ( t == null )
+			return list;
+
+		bool act = Game.CanActNow;
+
+		if ( act && Game.InSetup )
+		{
+			if ( Game.SetupStep == SetupStep.Claim && Game.OwnerOf( t.Id ) == null )
+				list.Add( new Item { Label = "Claim this realm", Glyph = "⚑", Enabled = true, Do = () => Game.Claim( t.Id ) } );
+			else if ( Game.SetupStep == SetupStep.Place && Mine )
+				list.Add( new Item { Label = "Muster a levy", Glyph = "⛨", Enabled = true, Do = () => Game.Place( t.Id ) } );
+		}
+		else if ( act )
+		{
+			switch ( Game.CurrentPhase )
+			{
+				case GamePhase.Reinforce when Mine:
+					list.Add( new Item
+					{
+						Label = $"Deploy {DeployCount} levies",
+						Glyph = "⛨",
+						Enabled = Game.PendingReinforcements > 0,
+						Do = () => Game.Deploy( t.Id, DeployCount )
+					} );
+					break;
+
+				case GamePhase.Attack when Mine:
+					list.Add( new Item
+					{
+						Label = "March from here",
+						Glyph = "⚔",
+						Enabled = Garrison >= 2,
+						Do = () => { BoardInteraction.SelectedTerritoryId = t.Id; }
+					} );
+					break;
+
+				case GamePhase.Fortify when Mine:
+					list.Add( new Item
+					{
+						Label = "Fortify from here",
+						Glyph = "➤",
+						Enabled = Garrison >= 2,
+						Do = () => { BoardInteraction.SelectedTerritoryId = t.Id; }
+					} );
+					break;
+			}
+		}
+
+		// Always available.
+		list.Add( new Item { Label = "Inspect realm", Glyph = "◉", Enabled = true, Do = () => { } } );
+		list.Add( new Item { Label = "Close", Glyph = "✕", Enabled = true, Do = () => { } } );
+		return list;
+	}
+
+	private void Invoke( Item item )
+	{
+		if ( !item.Enabled )
+			return;
+		item.Do?.Invoke();
+		BoardInteraction.CloseMenu();
+	}
+
+	protected override int BuildHash()
+		=> System.HashCode.Combine( Game?.ViewHash ?? 0, BoardInteraction.ActionMenuTerritoryId,
+			BoardInteraction.MoveAmount, Game?.PendingReinforcements ?? 0 );
+}

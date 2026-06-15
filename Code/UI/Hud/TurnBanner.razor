@@ -1,0 +1,95 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+@* A heraldic banner that sweeps in whenever a new player's turn begins, holds, then sweeps out.
+   Driven by C# interpolation from a start time (same proven pattern as AnimationLayer) so it
+   replays cleanly on every turn change without CSS-keyframe identity tricks. *@
+@{ Sync(); }
+@if ( Showing )
+{
+	<root class="turn-banner" style="opacity: @F(Op); transform: translateY( @F(OffsetY)px );">
+		<div class="tb-card" style="border-color: @Accent;">
+			@if ( HasSigil )
+			{
+				<div class="tb-sigil" style="background-image: url( @Faction.SigilPath );"></div>
+			}
+			<div class="tb-text">
+				<div class="tb-name" style="color: @Accent;">@FactionName</div>
+				<div class="tb-sub">@Sub</div>
+			</div>
+		</div>
+	</root>
+}
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private const float Dur = 2.6f;
+	private string _lastKey;
+	private float _start = -999f;
+
+	// Identity of the current player-turn; null when a banner shouldn't show (menu, setup, game over).
+	private string Key =>
+		( Game == null || Game.Mode != GameMode.InGame || Game.InSetup
+			|| Game.WinnerPlayerId != null || Game.CurrentPlayerId == null )
+			? null
+			: $"{Game.TurnNumber}_{Game.CurrentPlayerId}";
+
+	private void Sync()
+	{
+		var k = Key;
+		if ( k == null ) { _lastKey = null; return; }
+		if ( k != _lastKey )
+		{
+			bool first = _lastKey == null;
+			_lastKey = k;
+			_start = Time.Now;
+			if ( !first ) // skip the chime on the very first turn-in (game just opened)
+				MiskAudio.Play( "turn" );
+		}
+	}
+
+	private float Elapsed => Time.Now - _start;
+	private bool Showing => _lastKey != null && Elapsed < Dur;
+
+	private Faction Faction => Game?.CurrentFaction;
+	private bool HasSigil => Faction != null && !string.IsNullOrEmpty( Faction.SigilPath );
+	private string FactionName => Faction?.Name ?? "A Host";
+	private string Accent => Faction?.Accent ?? "#e8dcc0";
+	private string Sub => Game != null && Game.CanActNow ? "YOUR TURN" : "MARCHES TO WAR";
+
+	// Sweep down + fade in, hold, then fade + lift away.
+	private float Op
+	{
+		get
+		{
+			float t = Elapsed / Dur;
+			if ( t < 0.12f ) return t / 0.12f;
+			if ( t > 0.8f ) return System.Math.Max( 0f, 1f - ( t - 0.8f ) / 0.2f );
+			return 1f;
+		}
+	}
+
+	private float OffsetY
+	{
+		get
+		{
+			float t = Elapsed / Dur;
+			if ( t < 0.12f ) return -40f * ( 1f - t / 0.12f );
+			if ( t > 0.8f ) return -28f * ( ( t - 0.8f ) / 0.2f );
+			return 0f;
+		}
+	}
+
+	private static string F( float v ) => v.ToString( "0.##", System.Globalization.CultureInfo.InvariantCulture );
+
+	protected override int BuildHash()
+	{
+		int frame = Showing ? (int)( Time.Now * 30f ) : 0;
+		return System.HashCode.Combine( _lastKey, frame );
+	}
+}

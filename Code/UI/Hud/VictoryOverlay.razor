@@ -1,0 +1,39 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+<root class="victory">
+	<div class="victory-card">
+		<div class="victory-title">THE WAR IS WON</div>
+		@if ( HasSigil )
+		{
+			<div class="victory-sigil" style="background-image: url( @Winner.SigilPath );"></div>
+		}
+		<div class="victory-faction" style="color: @Accent;">@(HasSigil ? "" : Glyph) @WinnerName</div>
+		<div class="victory-sub">All the realms kneel to one banner.</div>
+
+		@if ( Game.IsHost )
+		{
+			<div class="victory-button" onclick=@(() => Game.ReturnToMenu())>Begin Anew</div>
+		}
+		else
+		{
+			<div class="victory-sub">Awaiting the host…</div>
+		}
+	</div>
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+	private Faction Winner => Game.FactionOf( Game.WinnerPlayerId );
+
+	private string WinnerName => Winner?.Name ?? "The Last Host";
+	private string Glyph => Winner?.Glyph ?? "♛";
+	private string Accent => Winner?.Accent ?? "#c9a24a";
+	private bool HasSigil => Winner != null && !string.IsNullOrEmpty( Winner.SigilPath );
+
+	protected override int BuildHash() => System.HashCode.Combine( Game?.WinnerPlayerId, Game?.ViewHash ?? 0 );
+}

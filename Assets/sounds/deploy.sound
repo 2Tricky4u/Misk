@@ -1,0 +1,7 @@
+{
+	"UI": true,
+	"Volume": 0.7,
+	"Sounds": [
+		"sounds/sfx_deploy.mp3"
+	]
+}

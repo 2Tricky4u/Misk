@@ -1,0 +1,97 @@
+@using Sandbox
+@using Sandbox.UI
+@using System.Linq
+@using Misk.Presentation
+@using Misk.Domain
+@namespace Misk.UI
+@inherits Panel
+
+@* The "war council" intel box. Slides in on the right while a territory is hovered (or its
+   action menu is open). Read-only and click-through (pointer-events: none) so it never steals
+   board clicks. Perfect-information for now; a future fog-of-war pass can redact fields here. *@
+<root class="region-info @(Territory != null ? "shown" : "")">
+	@if ( Territory is { } t )
+	{
+		<div class="ri-card">
+			<div class="ri-head">
+				@if ( HasSigil )
+				{
+					<div class="ri-sigil" style="background-image: url( @Faction.SigilPath );"></div>
+				}
+				else
+				{
+					<div class="ri-sigil ri-swatch" style="background-color: @OwnerColor;">@OwnerGlyph</div>
+				}
+				<div class="ri-titles">
+					<div class="ri-name">@t.Name</div>
+					<div class="ri-region" style="color: @RegionColor;">@RegionName</div>
+				</div>
+			</div>
+
+			<div class="ri-row"><span class="ri-key">Held by</span><span class="ri-val" style="color: @OwnerColor;">@OwnerLabel</span></div>
+			<div class="ri-row"><span class="ri-key">Garrison</span><span class="ri-val">@Garrison</span></div>
+			<div class="ri-row"><span class="ri-key">Dominion</span><span class="ri-val">@RegionProgress (+@RegionBonus)</span></div>
+
+			<div class="ri-borders">
+				<div class="ri-key">Borders</div>
+				<div class="ri-border-list">
+					@foreach ( var n in Neighbours )
+					{
+						<div class="ri-border-chip" style="border-color: @Game.OwnerColor( n.Id );">@n.Name</div>
+					}
+				</div>
+			</div>
+		</div>
+	}
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	// Prefer the open menu's target, then hover, so the box stays put while the menu is up.
+	private Territory Territory
+	{
+		get
+		{
+			if ( Game?.Map == null )
+				return null;
+			var id = BoardInteraction.ActionMenuTerritoryId
+				?? BoardInteraction.HoveredTerritoryId
+				?? BoardInteraction.SelectedTerritoryId;
+			return id == null ? null : Game.Map.Territory( id );
+		}
+	}
+
+	private string Owner => Territory != null ? Game.OwnerOf( Territory.Id ) : null;
+	private Faction Faction => Owner != null ? Game.FactionOf( Owner ) : null;
+	private bool HasSigil => Faction != null && !string.IsNullOrEmpty( Faction.SigilPath );
+	private string OwnerColor => Territory != null ? Game.OwnerColor( Territory.Id ) : "#5a5048";
+	private string OwnerGlyph => Faction?.Glyph ?? "—";
+	private string OwnerLabel => Faction?.Name ?? "Unclaimed";
+	private int Garrison => Territory != null ? Game.ArmiesOf( Territory.Id ) : 0;
+
+	private Region RegionObj => Territory != null ? Game.Map.Region( Territory.RegionId ) : null;
+	private string RegionName => RegionObj?.Name ?? "—";
+	private string RegionColor => RegionObj?.Color ?? "#9a8a6a";
+	private int RegionBonus => RegionObj?.Bonus ?? 0;
+
+	// "3 / 4 held by Iron Covenant" style dominion summary for the territory's region.
+	private string RegionProgress
+	{
+		get
+		{
+			if ( RegionObj == null || Owner == null )
+				return "contested";
+			int held = RegionObj.TerritoryIds.Count( id => Game.OwnerOf( id ) == Owner );
+			return $"{held} / {RegionObj.TerritoryIds.Count}";
+		}
+	}
+
+	private IEnumerable<Territory> Neighbours =>
+		Territory == null ? Enumerable.Empty<Territory>()
+			: Territory.AdjacentIds.Select( id => Game.Map.Territory( id ) ).Where( t => t != null );
+
+	protected override int BuildHash()
+		=> System.HashCode.Combine( Game?.ViewHash ?? 0, BoardInteraction.HoveredTerritoryId,
+			BoardInteraction.ActionMenuTerritoryId, BoardInteraction.SelectedTerritoryId );
+}

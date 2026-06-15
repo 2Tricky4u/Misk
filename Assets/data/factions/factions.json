@@ -1,0 +1,10 @@
+{
+  "factions": [
+    { "id": "iron_covenant",    "name": "Iron Covenant",    "color": "#8a8d91", "accent": "#d4d7db", "sigil": "data/theme/sigils/iron_covenant.png", "unit": "data/theme/units/iron_covenant.png", "glyph": "⚒", "blurb": "Grim smith-priests who forge oaths in iron and ash." },
+    { "id": "bloodthorn_clans", "name": "Bloodthorn Clans",  "color": "#8a1c2b", "accent": "#e0566a", "sigil": "data/theme/sigils/bloodthorn_clans.png", "unit": "data/theme/units/bloodthorn_clans.png", "glyph": "⚔", "blurb": "Savage reavers who crown their dead in thorns." },
+    { "id": "house_veyr",       "name": "House Veyr",        "color": "#3a4f8a", "accent": "#6f88d4", "sigil": "data/theme/sigils/house_veyr.png", "unit": "data/theme/units/house_veyr.png", "glyph": "♛", "blurb": "A fading royal line clutching a stolen throne." },
+    { "id": "ashen_host",       "name": "Ashen Host",        "color": "#52514e", "accent": "#9a9a96", "sigil": "data/theme/sigils/ashen_host.png", "unit": "data/theme/units/ashen_host.png", "glyph": "☠", "blurb": "The marching dead of a buried empire." },
+    { "id": "verdant_court",    "name": "Verdant Court",     "color": "#2f7a3a", "accent": "#6fc47a", "sigil": "data/theme/sigils/verdant_court.png", "unit": "data/theme/units/verdant_court.png", "glyph": "❧", "blurb": "Old powers of root and rot, neither kind nor cruel." },
+    { "id": "obsidian_legion",  "name": "Obsidian Legion",   "color": "#6a3a9a", "accent": "#a878d4", "sigil": "data/theme/sigils/obsidian_legion.png", "unit": "data/theme/units/obsidian_legion.png", "glyph": "✦", "blurb": "Sorcerer-warlords bound to a black, hungry star." }
+  ]
+}

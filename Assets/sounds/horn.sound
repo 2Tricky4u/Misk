@@ -1,0 +1,7 @@
+{
+	"UI": true,
+	"Volume": 0.8,
+	"Sounds": [
+		"sounds/sfx_horn.mp3"
+	]
+}
