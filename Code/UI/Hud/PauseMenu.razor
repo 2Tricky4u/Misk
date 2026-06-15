@@ -19,8 +19,9 @@
 
 	private void Resign()
 	{
-		UiNav.Close();
-		Game?.ReturnToMenu();
+		MiskAudio.Click();
+		UiNav.Confirm( "Resign the War?", "Your campaign will be abandoned and the realms left to your rivals.",
+			"Resign", () => Game?.ReturnToMenu() );
 	}
 
 	protected override int BuildHash() => System.HashCode.Combine( UiNav.Overlay, Game?.ViewHash ?? 0 );

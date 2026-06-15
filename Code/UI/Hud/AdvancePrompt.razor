@@ -12,6 +12,7 @@
 			<div class="step-btn" onclick=@(() => Step( -1 ))>−</div>
 			<div class="step-val">@Amount</div>
 			<div class="step-btn" onclick=@(() => Step( 1 ))>+</div>
+			<div class="step-btn step-max" onclick=@(() => { MiskAudio.Click(); _amount = Max; })>MAX</div>
 		</div>
 		<div class="advance-btn" onclick=@Confirm>Send forth @Amount</div>
 	</div>
@@ -36,10 +37,15 @@
 
 	private string ToName => Game.Map?.Territory( Game.PendingAdvanceTo )?.Name ?? "the realm";
 
-	private void Step( int delta ) => _amount = System.Math.Clamp( Amount + delta, Min, Max );
+	private void Step( int delta )
+	{
+		MiskAudio.Click();
+		_amount = System.Math.Clamp( Amount + delta, Min, Max );
+	}
 
 	private void Confirm()
 	{
+		MiskAudio.Click();
 		Game.Advance( Amount );
 		_amount = -1;
 	}

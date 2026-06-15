@@ -10,8 +10,9 @@ namespace Misk.Presentation;
 /// get the same animations, sounds and host-authoritative validation as a human's. The host calls
 /// <see cref="Step"/> on a throttle (see MiskGame.OnUpdate) so its turn is watchable.
 ///
-/// Strategy is intentionally a solid "Normal": concentrate reinforcements on the strongest border,
-/// press favourable attacks, cash in card sets, then end. Difficulty tiers can branch later.
+/// All tiers concentrate reinforcements on the strongest border, press attacks, cash card sets,
+/// then end. The seat's <see cref="SeatInfo.AiLevel"/> sets how slim a margin it will attack on and
+/// how eagerly it trades cards: 0 = Cautious (only big edges), 1 = Seasoned, 2 = Ruthless (slim edges).
 /// </summary>
 public static class MiskAI
 {
@@ -20,6 +21,8 @@ public static class MiskAI
 	{
 		if ( g == null || g.Map == null || g.Data == null || g.CurrentPlayerId == null )
 			return;
+
+		int level = g.SeatOf( g.CurrentPlayerId )?.AiLevel ?? 1;
 
 		if ( g.InSetup )
 		{
@@ -37,16 +40,19 @@ public static class MiskAI
 		switch ( g.CurrentPhase )
 		{
 			case GamePhase.Reinforce:
-				StepReinforce( g );
+				StepReinforce( g, level );
 				break;
 			case GamePhase.Attack:
-				StepAttack( g );
+				StepAttack( g, level );
 				break;
 			default: // Fortify — keep it simple: hold position and end the turn.
 				g.EndPhase();
 				break;
 		}
 	}
+
+	// The slimmest army advantage this tier will attack on: Cautious only on a rout, Ruthless on a sliver.
+	private static int AttackThreshold( int level ) => level switch { 0 => 3, 2 => 1, _ => 2 };
 
 	// ----------------------------------------------------------------- setup draft
 	private static void StepSetup( MiskGame g )
@@ -71,9 +77,12 @@ public static class MiskAI
 	}
 
 	// ----------------------------------------------------------------- reinforce
-	private static void StepReinforce( MiskGame g )
+	private static void StepReinforce( MiskGame g, int level )
 	{
-		var set = FindSet( g );
+		// Cautious hoards its cards until forced; Seasoned/Ruthless cash any set on sight.
+		var hand = g.HandOf( g.CurrentPlayerId );
+		bool tradeNow = level > 0 || hand.Count >= g.Data.Rules.MandatoryTradeThreshold;
+		var set = tradeNow ? FindSet( hand ) : null;
 		if ( set != null )
 		{
 			g.TradeCards( set );
@@ -94,9 +103,9 @@ public static class MiskAI
 	}
 
 	// ----------------------------------------------------------------- attack
-	private static void StepAttack( MiskGame g )
+	private static void StepAttack( MiskGame g, int level )
 	{
-		var attack = BestAttack( g, g.CurrentPlayerId );
+		var attack = BestAttack( g, g.CurrentPlayerId, AttackThreshold( level ) );
 		if ( attack is { } a )
 		{
 			int dice = Math.Min( g.Data.Rules.AttackerMaxDice, Math.Max( 1, g.ArmiesOf( a.from ) - 1 ) );
@@ -108,9 +117,9 @@ public static class MiskAI
 	}
 
 	// ----------------------------------------------------------------- heuristics
-	private static string[] FindSet( MiskGame g )
+	private static string[] FindSet( IReadOnlyList<MiskGame.CardView> hand )
 	{
-		var cards = g.MyHand.Select( v => new Card( v.Id, v.Kind, v.TerritoryId ) ).ToList();
+		var cards = hand.Select( v => new Card( v.Id, v.Kind, v.TerritoryId ) ).ToList();
 		var set = CardSetEvaluator.FindSet( cards );
 		return set?.Select( c => c.Id ).ToArray();
 	}
@@ -135,11 +144,12 @@ public static class MiskAI
 		return best;
 	}
 
-	// The most favourable assault: our strongest edge over an adjacent enemy (only if we outnumber).
-	private static (string from, string to)? BestAttack( MiskGame g, string me )
+	// The most favourable assault: our strongest edge over an adjacent enemy, but only if that edge
+	// meets the tier's minimum margin (minEdge).
+	private static (string from, string to)? BestAttack( MiskGame g, string me, int minEdge )
 	{
 		(string from, string to)? best = null;
-		int bestEdge = 0;
+		int bestEdge = minEdge - 1;
 		foreach ( var t in g.Map.Territories )
 		{
 			if ( g.OwnerOf( t.Id ) != me || g.ArmiesOf( t.Id ) < 2 )
@@ -149,7 +159,7 @@ public static class MiskAI
 				if ( g.OwnerOf( adjId ) == me )
 					continue;
 				int edge = g.ArmiesOf( t.Id ) - g.ArmiesOf( adjId );
-				if ( edge > 0 && edge > bestEdge )
+				if ( edge >= minEdge && edge > bestEdge )
 				{
 					bestEdge = edge;
 					best = (t.Id, adjId);

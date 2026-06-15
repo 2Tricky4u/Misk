@@ -113,7 +113,23 @@ public static class GameDataLoader
 	private static List<Faction> BuildFactions( FactionsDto dto )
 	{
 		return (dto.Factions ?? new List<FactionDto>()).Select( f => new Faction(
-			f.Id, f.Name, f.Color, f.Accent, f.Sigil, f.Unit, f.Glyph, f.Blurb ) ).ToList();
+			f.Id, f.Name, f.Color, f.Accent, f.Sigil, f.Unit, f.Glyph, f.Blurb, BuildUnits( f ) ) ).ToList();
+	}
+
+	// Per-denomination piece sprites, lower-cased keys. The infantry/default piece falls back to the
+	// legacy single "unit" sprite so existing factions keep working without a "units" block.
+	private static Dictionary<string, string> BuildUnits( FactionDto f )
+	{
+		var units = new Dictionary<string, string>();
+		if ( f.Units != null )
+		{
+			foreach ( var kv in f.Units )
+				if ( !string.IsNullOrEmpty( kv.Value ) )
+					units[kv.Key.ToLowerInvariant()] = kv.Value;
+		}
+		if ( !units.ContainsKey( "infantry" ) && !string.IsNullOrEmpty( f.Unit ) )
+			units["infantry"] = f.Unit;
+		return units;
 	}
 
 	private static RulesConfig BuildRules( RulesDto dto )

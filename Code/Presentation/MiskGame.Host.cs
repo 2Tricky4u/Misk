@@ -272,6 +272,50 @@ public sealed partial class MiskGame
 
 	// ------------------------------------------------------------------ lobby RPCs
 	[Rpc.Host]
+	public void RequestSetDisplayName( string seatPlayerId, string name )
+	{
+		if ( !IsAuthority || Mode != GameMode.Lobby )
+			return;
+
+		int idx = IndexOfSeat( seatPlayerId );
+		if ( idx < 0 )
+			return;
+
+		var seat = Seats[idx];
+		if ( !CallerControls( seat ) )
+			return;
+
+		name = (name ?? "").Trim();
+		if ( name.Length == 0 )
+			return;
+		if ( name.Length > 18 )
+			name = name.Substring( 0, 18 );
+
+		seat.DisplayName = name;
+		Seats[idx] = seat;
+		BumpVersion();
+	}
+
+	[Rpc.Host]
+	public void RequestSetAiLevel( string seatPlayerId, int level )
+	{
+		if ( !IsAuthority || Mode != GameMode.Lobby )
+			return;
+
+		int idx = IndexOfSeat( seatPlayerId );
+		if ( idx < 0 )
+			return;
+
+		var seat = Seats[idx];
+		if ( seat.IsHuman || !CallerControls( seat ) )
+			return;
+
+		seat.AiLevel = System.Math.Clamp( level, 0, 2 );
+		Seats[idx] = seat;
+		BumpVersion();
+	}
+
+	[Rpc.Host]
 	public void RequestSetFaction( string seatPlayerId, string factionId )
 	{
 		if ( !IsAuthority || Mode != GameMode.Lobby )
@@ -344,6 +388,48 @@ public sealed partial class MiskGame
 	public void TradeCards( string[] cardIds ) => RequestTradeCards( CurrentPlayerId, cardIds );
 	public void Advance( int count ) => RequestAdvance( CurrentPlayerId, count );
 	public void Claim( string territoryId ) { MiskAudio.Play( "deploy" ); RequestClaim( CurrentPlayerId, territoryId ); }
+
+	// ---- Blitz assault (Shift-attack): repeatedly assault one target until it falls or the source is spent.
+	public void BeginBlitz( string fromId, string toId )
+	{
+		if ( !IsAuthority || Mode != GameMode.InGame || CurrentPhase != GamePhase.Attack )
+			return;
+		if ( !CanBlitz( fromId, toId ) )
+			return;
+		_blitzFrom = fromId;
+		_blitzTo = toId;
+		_lastBlitzStep = 0f; // resolve the first round on the next tick
+	}
+
+	private bool CanBlitz( string fromId, string toId )
+	{
+		return fromId != null && toId != null
+			&& OwnerOf( fromId ) == CurrentPlayerId
+			&& OwnerOf( toId ) != CurrentPlayerId
+			&& ArmiesOf( fromId ) >= 2
+			&& Map != null && Map.AreAdjacent( fromId, toId );
+	}
+
+	private void EndBlitz() { _blitzFrom = null; _blitzTo = null; }
+
+	private void StepBlitz()
+	{
+		// A capture leaves a pending advance — push the maximum across, then keep going.
+		if ( HasPendingAdvance )
+		{
+			Advance( PendingAdvanceMax );
+			EndBlitz();
+			return;
+		}
+		if ( WinnerPlayerId != null || CurrentPhase != GamePhase.Attack || !CanBlitz( _blitzFrom, _blitzTo ) )
+		{
+			EndBlitz();
+			return;
+		}
+		int maxDice = System.Math.Min( Data.Rules.AttackerMaxDice, System.Math.Max( 1, ArmiesOf( _blitzFrom ) - 1 ) );
+		Attack( _blitzFrom, _blitzTo, maxDice );
+		// Next tick: if that captured, the pending-advance branch resolves it; otherwise another round.
+	}
 	public void Place( string territoryId ) { MiskAudio.Play( "deploy" ); RequestPlace( CurrentPlayerId, territoryId ); }
 
 	[Rpc.Host]
@@ -714,7 +800,7 @@ public sealed partial class MiskGame
 		if ( captured )
 			MiskAudio.Play( "horn" );
 
-		CombatLog.Add( new CombatLogLine { Message = message, AccentHex = accent, Captured = captured } );
+		CombatLog.Add( new CombatLogLine { Message = message, AccentHex = accent, Captured = captured, Turn = TurnNumber } );
 		while ( CombatLog.Count > 30 )
 			CombatLog.RemoveAt( 0 );
 	}
@@ -731,7 +817,7 @@ public sealed partial class MiskGame
 	[Rpc.Broadcast]
 	public void BroadcastLog( string message, string accent, bool emphasized )
 	{
-		CombatLog.Add( new CombatLogLine { Message = message, AccentHex = accent ?? "#e8dcc0", Captured = emphasized } );
+		CombatLog.Add( new CombatLogLine { Message = message, AccentHex = accent ?? "#e8dcc0", Captured = emphasized, Turn = TurnNumber } );
 		while ( CombatLog.Count > 30 )
 			CombatLog.RemoveAt( 0 );
 	}

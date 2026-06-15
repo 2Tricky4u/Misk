@@ -24,6 +24,9 @@ public struct SeatInfo
 	public Guid ConnectionId;
 	public bool IsReady;
 	public bool IsHuman;
+
+	/// <summary>AI strength for non-human seats: 0 = Cautious, 1 = Seasoned, 2 = Ruthless. Ignored for humans.</summary>
+	public int AiLevel;
 }
 
 /// <summary>A single combat-log entry, built locally on each client from a broadcast result.</summary>
@@ -32,4 +35,7 @@ public struct CombatLogLine
 	public string Message;
 	public string AccentHex;
 	public bool Captured;
+
+	/// <summary>The turn number this entry was logged on, for "Turn N" markers in the log.</summary>
+	public int Turn;
 }

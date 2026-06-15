@@ -24,6 +24,13 @@ public static class BoardInteraction
 	/// <summary>How many dice the attacker intends to roll (clamped by the UI to what's legal).</summary>
 	public static int AttackDice { get; set; } = 3;
 
+	/// <summary>True while the "max / auto" modifier (Shift) is held — deploy/fortify all, blitz attacks.</summary>
+	public static bool MaxModifier { get; set; }
+
+	/// <summary>When true the War Spoils card tray is minimized to a small tab so the board underneath
+	/// is clickable. Forced open while a trade is mandatory.</summary>
+	public static bool SpoilsCollapsed { get; set; }
+
 	/// <summary>Card ids the player has selected in the card tray (up to three).</summary>
 	public static List<string> SelectedCardIds { get; } = new();
 

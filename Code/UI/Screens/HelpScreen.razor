@@ -1,5 +1,6 @@
 @using Sandbox
 @using Sandbox.UI
+@using Misk.Presentation
 @namespace Misk.UI
 @inherits Panel
 
@@ -27,9 +28,13 @@
 
 			<div class="help-h">Winning</div>
 			<div class="help-p">Eliminate a warlord and you seize their war spoils. Hold every realm to win.</div>
+
+			<div class="help-h">Quick commands</div>
+			<div class="help-p">Hold Shift for the swift hand: Shift-click a realm to deploy ALL your levies, to fortify with your whole garrison, or — when assaulting — to blitz a target again and again until it falls or you cannot press on.</div>
+			<div class="help-p">E ends the current phase · Esc opens the war council (pause).</div>
 		</div>
 
-		<div class="overlay-button" onclick=@(() => UiNav.Close())>Close</div>
+		<div class="overlay-button" onclick=@(() => { MiskAudio.Click(); UiNav.Close(); })>Close</div>
 	</div>
 </root>
 

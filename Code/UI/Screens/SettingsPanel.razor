@@ -15,7 +15,7 @@
 				{
 					var lvl = i;
 					<div class="vol-seg @(MiskAudio.MusicVolume >= ( lvl - 0.5f ) / 5f ? "on" : "")"
-						 onclick=@(() => MiskAudio.SetMusicVolume( lvl / 5f ))></div>
+						 onclick=@(() => { MiskAudio.Click(); MiskAudio.SetMusicVolume( lvl / 5f ); })></div>
 				}
 			</div>
 		</div>
@@ -32,7 +32,7 @@
 			</div>
 		</div>
 
-		<div class="overlay-button" onclick=@(() => UiNav.Close())>Close</div>
+		<div class="overlay-button" onclick=@(() => { MiskAudio.Click(); UiNav.Close(); })>Close</div>
 	</div>
 </root>
 

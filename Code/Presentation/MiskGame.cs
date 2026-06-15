@@ -192,6 +192,16 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 			Current = null;
 	}
 
+	/// <summary>Dev helper: drop the static data cache, reload the JSON, and re-pull it into this game so
+	/// the board redraws with freshly-built factions/theme. Needed after a hot-reload that changed the
+	/// data model (the static <see cref="StaticData"/> cache otherwise survives with stale objects).</summary>
+	public void RefreshStaticData()
+	{
+		StaticData.Reload();
+		Data = StaticData.Current;
+		StateVersion++;
+	}
+
 	// NOTE on the cursor: the whole game is a 2D UI on a ScreenPanel with no first-person
 	// controller. Cursor visibility + clickability is driven by CSS `pointer-events: all` on the
 	// UI root (see MiskRoot.razor.scss) — the s&box-recommended way. We deliberately do NOT set
@@ -201,6 +211,12 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 	private bool _victoryPlayed;
 	private float _lastAiStep;
 	private const float AiStepInterval = 0.45f;
+
+	// Blitz assault (Shift-attack): resolve one round per interval until done. Host-only state.
+	private string _blitzFrom;
+	private string _blitzTo;
+	private float _lastBlitzStep;
+	private const float BlitzStepInterval = 0.25f;
 
 	protected override void OnUpdate()
 	{
@@ -232,6 +248,14 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 				_lastAiStep = Time.Now;
 				MiskAI.Step( this );
 			}
+		}
+
+		// Blitz assault: one round per interval until the target falls or the source is spent.
+		if ( IsAuthority && Mode == GameMode.InGame && _blitzFrom != null
+			&& Time.Now - _lastBlitzStep > BlitzStepInterval )
+		{
+			_lastBlitzStep = Time.Now;
+			StepBlitz();
 		}
 	}
 
@@ -310,6 +334,9 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 	/// <summary>Army value the next traded set would be worth (for the card tray).</summary>
 	public int NextSetValue => CardSetEvaluator.SetValue( CardSetsTradedIn, Data?.Rules ?? new RulesConfig() );
 
+	/// <summary>Bonus armies dropped onto a depicted territory you own when you trade a set including it.</summary>
+	public int CardTerritoryBonus => Data?.Rules?.CardTerritoryBonus ?? 2;
+
 	/// <summary>The player id whose private hand the local machine should see.</summary>
 	public string LocalPlayerId
 	{
@@ -343,6 +370,15 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 
 			return _handCache.TryGetValue( pid, out var list ) ? list : (IReadOnlyList<CardView>)Array.Empty<CardView>();
 		}
+	}
+
+	/// <summary>The hand of a specific player. Host-only (returns empty off the authority); the AI uses
+	/// this to read the seat it is currently driving rather than the local player's hand.</summary>
+	public IReadOnlyList<CardView> HandOf( string playerId )
+	{
+		if ( !IsAuthority || _state == null || playerId == null )
+			return Array.Empty<CardView>();
+		return _state.Hand( playerId ).Select( c => new CardView { Id = c.Id, Kind = c.Kind, TerritoryId = c.TerritoryId } ).ToList();
 	}
 
 	/// <summary>True when the local player is forced to trade a set before they can end the reinforce phase.</summary>

@@ -8,54 +8,147 @@
 
 @{
 	var hand = Game.MyHand;
-}
-@if ( ShouldShow( hand ) )
-{
-	<root class="card-tray @(Game.MustTradeNow ? "must" : "")">
-		<div class="tray-head">
-			<span class="tray-title">War Spoils</span>
-			<span class="tray-sub">Next muster: @Game.NextSetValue levies · @Game.CardSetsTradedIn sets given</span>
-			@if ( Game.MustTradeNow )
-			{
-				<span class="tray-warn">Your hand is full — you must muster a set</span>
-			}
-		</div>
+	// Re-open the tray automatically at the start of a new turn so freshly-won spoils are noticed.
+	if ( Game != null && Game.TurnNumber != _lastTurn )
+	{
+		_lastTurn = Game.TurnNumber;
+		BoardInteraction.SpoilsCollapsed = false;
+	}
 
-		<div class="tray-cards">
-			@foreach ( var card in hand )
-			{
-				var key = card.Kind.ToString().ToLowerInvariant();
-				var style = Game.Theme.Card( key );
-				var selected = BoardInteraction.SelectedCardIds.Contains( card.Id );
-				<div class="war-card @(selected ? "sel" : "")"
-					 style="border-color: @style.Color; background-image: url( data/theme/cards/@(key).png );"
-					 onclick=@(() => { MiskAudio.Click(); BoardInteraction.ToggleCard( card.Id ); })>
-					<div class="wc-overlay">
-						<div class="wc-kind" style="color: @style.Color;">@style.Name</div>
-						<div class="wc-terr">@TerritoryName( card.TerritoryId )</div>
+	bool showing = ShouldShow( hand );
+	// Riffle cue the moment the tray first appears for the turn.
+	if ( showing && !_wasShowing )
+		MiskAudio.Play( "shuffle" );
+	_wasShowing = showing;
+}
+@* A full-area, click-through wrapper. The interactive panels are CHILD elements — never the
+   component's own <root> — so toggling doesn't leave a stale onclick on the root. *@
+<root class="spoils-root">
+	@if ( showing )
+	{
+		@if ( Collapsed )
+		{
+			<div class="spoils-tab @(Game.MustTradeNow ? "must" : "")" onclick=@Expand>
+				<span class="st-icon">⚑</span>
+				<span class="st-label">War Spoils</span>
+				<span class="st-count">@hand.Count</span>
+				<span class="st-chev">▴</span>
+			</div>
+		}
+		else
+		{
+			<div class="card-tray @(Game.MustTradeNow ? "must" : "")">
+				<div class="tray-head">
+					<span class="tray-title">War Spoils</span>
+					<span class="tray-sub">@hand.Count in hand · next set +@Game.NextSetValue levies</span>
+					@if ( !Game.MustTradeNow )
+					{
+						<div class="tray-collapse" onclick=@Collapse>▾ hide</div>
+					}
+				</div>
+
+				<div class="tray-hint">Won by conquest — every turn you seize land you draw one card. Trade a matching set of three for levies.</div>
+
+				@if ( Game.MustTradeNow )
+				{
+					<div class="tray-warn">Your hand is full — you must muster a set to continue.</div>
+				}
+
+				<div class="tray-cards">
+					@{ int _ci = 0; }
+					@foreach ( var card in hand )
+					{
+						var key = card.Kind.ToString().ToLowerInvariant();
+						var style = Game.Theme.Card( key );
+						var selected = BoardInteraction.SelectedCardIds.Contains( card.Id );
+						var own = Ownership( card );
+						// Stagger each card's deal-in so the draw cascades; backwards fill holds them off-screen until their turn.
+						var delay = ( 0.13f * _ci ).ToString( System.Globalization.CultureInfo.InvariantCulture );
+						_ci++;
+						<div class="war-card @(selected ? "sel" : "")"
+							 style="border-color: @style.Color; background-image: url( data/theme/cards/@(key).png ); animation-delay: @(delay)s;"
+							 onclick=@(() => { MiskAudio.Click(); BoardInteraction.ToggleCard( card.Id ); })>
+							<div class="wc-overlay">
+								<div class="wc-kind" style="color: @style.Color;">@style.Name</div>
+								<div class="wc-terr">@TerritoryName( card.TerritoryId )</div>
+							</div>
+							@* Hover reveal: what this card is and does. *@
+							<div class="wc-tip">
+								<div class="tip-suit" style="color: @style.Color;">@style.Name@(card.Kind == CardKind.Banner ? "  ·  WILD" : "")</div>
+								<div class="tip-line">@SuitBlurb( card )</div>
+								<div class="tip-effect @own.Cls">@own.Text</div>
+								<div class="tip-foot">Set traded now → +@Game.NextSetValue levies</div>
+							</div>
+						</div>
+					}
+				</div>
+
+				<div class="tray-legend">
+					<span class="legend-head">A SET IS</span>
+					<span class="legend-item">three alike</span>
+					<span class="legend-dot">·</span>
+					<span class="legend-item">one of each</span>
+					<span class="legend-dot">·</span>
+					<span class="legend-item">any two + a Banner</span>
+				</div>
+
+				<div class="tray-actions">
+					<div class="muster-btn @(CanMuster ? "" : "disabled")"
+						 onclick=@(() => { if ( CanMuster ) Muster(); })>
+						Muster Set  (+@Game.NextSetValue)
 					</div>
 				</div>
-			}
-		</div>
-
-		<div class="tray-actions">
-			<div class="muster-btn @(CanMuster ? "" : "disabled")"
-				 onclick=@(() => { if ( CanMuster ) Muster(); })>
-				Muster Set  (+@Game.NextSetValue)
 			</div>
-		</div>
-	</root>
-}
+		}
+	}
+</root>
 
 @code {
 	private MiskGame Game => MiskGame.Current;
+	private int _lastTurn = -1;
+	private bool _wasShowing;
 
 	private bool ShouldShow( IReadOnlyList<MiskGame.CardView> hand )
 		=> Game != null && Game.Mode == GameMode.InGame && !Game.InSetup && Game.CanActNow
 		   && Game.CurrentPhase == GamePhase.Reinforce && hand.Count > 0;
 
+	// Forced open while a trade is mandatory; otherwise honour the player's minimize choice.
+	private bool Collapsed => BoardInteraction.SpoilsCollapsed && !Game.MustTradeNow;
+
+	private void Expand() { MiskAudio.Play( "shuffle" ); BoardInteraction.SpoilsCollapsed = false; }
+	private void Collapse() { MiskAudio.Click(); BoardInteraction.SpoilsCollapsed = true; }
+
 	private string TerritoryName( string id )
 		=> id == null ? "—" : (Game.Map?.Territory( id )?.Name ?? id);
+
+	// What the suit is, in plain terms (the rules only ever care that sets match).
+	private string SuitBlurb( MiskGame.CardView card )
+		=> card.Kind == CardKind.Banner
+			? "Stands in for any suit — pairs with any two cards to complete a set."
+			: "A troop card depicting one land. Collect a matching set to muster levies.";
+
+	private struct Effect { public string Text; public string Cls; }
+
+	// The card's live effect: a depicted land you hold pays a bonus when this card is in a traded set.
+	private Effect Ownership( MiskGame.CardView card )
+	{
+		if ( card.TerritoryId == null )
+			return new Effect { Text = "No land bonus — the Banner is pure wild.", Cls = "neutral" };
+
+		var land = TerritoryName( card.TerritoryId );
+		var owner = Game.OwnerOf( card.TerritoryId );
+
+		if ( owner != null && owner == Game.LocalPlayerId )
+			return new Effect { Text = $"You hold {land} — trade a set with this card to drop +{Game.CardTerritoryBonus} levies right onto it.", Cls = "good" };
+
+		if ( owner != null )
+		{
+			var foe = Game.FactionOf( owner )?.Name ?? "an enemy";
+			return new Effect { Text = $"{land} is held by {foe} — retake it to earn the +{Game.CardTerritoryBonus} bonus.", Cls = "bad" };
+		}
+
+		return new Effect { Text = $"{land} is unclaimed — seize it to earn the +{Game.CardTerritoryBonus} bonus.", Cls = "neutral" };
+	}
 
 	private bool CanMuster
 	{
@@ -79,8 +172,10 @@
 	{
 		Game.TradeCards( BoardInteraction.SelectedCardIds.ToArray() );
 		BoardInteraction.ClearCards();
+		// The deed is done — tuck the tray away for the round (the board is clickable again).
+		BoardInteraction.SpoilsCollapsed = true;
 	}
 
 	protected override int BuildHash()
-		=> System.HashCode.Combine( Game?.ViewHash ?? 0, BoardInteraction.SelectedCardIds.Count );
+		=> System.HashCode.Combine( Game?.ViewHash ?? 0, BoardInteraction.SelectedCardIds.Count, BoardInteraction.SpoilsCollapsed );
 }

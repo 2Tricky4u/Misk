@@ -161,7 +161,34 @@ $blood-lit:  #b5303a;
 		border: 1px solid rgba(107, 84, 54, 0.5);
 		border-radius: 4px;
 	}
-	.seat-name { width: 190px; font-size: 20px; color: $text; }
+	.seat-name { width: 210px; flex-direction: row; align-items: center; flex-wrap: wrap; font-size: 20px; color: $text; }
+	.name-input {
+		width: 130px;
+		padding: 4px 8px;
+		background-color: rgba(0,0,0,0.4);
+		border: 1px solid rgba(107, 84, 54, 0.7);
+		border-radius: 3px;
+		font-size: 16px; color: $text;
+		&:focus { border-color: $gold; }
+	}
+	.name-save {
+		justify-content: center; align-items: center;
+		width: 24px; height: 24px; margin-left: 5px;
+		border-radius: 3px;
+		background-color: rgba(47, 80, 40, 0.6);
+		border: 1px solid #4f7a3a;
+		font-size: 14px; color: #e8dcc0;
+		&:hover { background-color: rgba(67, 110, 52, 0.85); }
+	}
+	.ai-diff {
+		margin-left: 8px;
+		padding: 2px 9px;
+		border-radius: 3px;
+		background-color: rgba(0,0,0,0.35);
+		border: 1px solid $gold-soft;
+		font-size: 12px; color: $gold-soft; letter-spacing: 1px;
+		&:hover { color: #fff; border-color: $gold; }
+	}
 	.faction-chips { flex-direction: row; flex-wrap: wrap; flex-grow: 1; }
 	.faction-chip {
 		flex-direction: row;
@@ -312,6 +339,13 @@ $blood-lit:  #b5303a;
 		border-color: rgba(122, 22, 32, 0.8);
 		&:hover { background-color: rgba(122, 22, 32, 0.6); border-color: $blood-lit; }
 	}
+	.confirm-card { max-width: 520px; }
+	.confirm-body {
+		font-size: 18px; color: $parchment; line-height: 26px;
+		text-align: center; margin-bottom: 24px;
+	}
+	.confirm-actions { flex-direction: row; }
+	.confirm-actions .overlay-button { flex-grow: 1; margin: 0 6px; }
 	.set-row { flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 	.set-label { font-size: 18px; color: $parchment; letter-spacing: 1px; }
 	.vol-bars { flex-direction: row; }
@@ -444,15 +478,39 @@ $blood-lit:  #b5303a;
 	// With a pawn, anchor the figure's feet near the territory point (not its centre).
 	.centroid-badge.has-pawn { transform: translate(-50%, -74%); }
 
-	// The faction soldier sprite standing on the territory.
-	.pawn {
-		width: 66px;
-		height: 98px;
+	// The garrison rendered as a stack of denominated pieces (artillery / cavalry / infantry),
+	// standing shoulder-to-shoulder on the territory and anchored at their feet.
+	.pawn-stack {
+		flex-direction: row;
+		align-items: flex-end;
+		justify-content: center;
+	}
+	.pawn-tok {
+		position: relative;
+		width: 52px; height: 80px; // base size; tier classes below override per denomination
 		background-size: contain;
 		background-repeat: no-repeat;
 		background-position: bottom center;
+		margin: 0px -8px;
 		filter: drop-shadow(0px 3px 5px rgba(0,0,0,0.75));
 		animation: idle-bob 3.4s ease-in-out infinite;
+	}
+	// Piece size scales with denomination so a cannon (10) reads as heavier than a soldier (1).
+	.pawn-tok.tier-1  { width: 46px; height: 70px; }
+	.pawn-tok.tier-5  { width: 58px; height: 86px; }
+	.pawn-tok.tier-10 { width: 72px; height: 98px; }
+	// "×N" tag for a collapsed denomination (e.g. one cannon standing in for three).
+	.tok-badge {
+		position: absolute;
+		top: 2px; right: -4px;
+		padding: 0px 5px;
+		min-width: 18px; height: 18px;
+		justify-content: center; align-items: center;
+		border-radius: 9px;
+		background-color: rgba(8, 5, 3, 0.92);
+		border: 1px solid $gold-soft;
+		font-size: 12px; font-weight: bold; color: $gold;
+		text-shadow: 0px 1px 2px rgba(0,0,0,0.95);
 	}
 
 	.troops {
@@ -754,6 +812,7 @@ $blood-lit:  #b5303a;
 		&:hover { border-color: $gold; }
 	}
 	.step-val { width: 46px; justify-content: center; align-items: center; font-size: 22px; color: #fff; }
+	.step-max { width: auto; padding: 0 12px; margin-left: 8px; font-size: 14px; letter-spacing: 1px; color: $gold-soft; }
 
 	.hud-action {
 		justify-content: center; align-items: center;
@@ -793,6 +852,10 @@ $blood-lit:  #b5303a;
 		pointer-events: none;
 	}
 	.log-title { font-size: 15px; color: $muted; letter-spacing: 3px; margin-bottom: 8px; }
+	.log-turn {
+		font-size: 12px; color: $gold-soft; letter-spacing: 2px;
+		align-self: center; margin: 4px 0 3px 0; opacity: 0.75;
+	}
 	.log-line {
 		font-size: 15px; color: $text; margin-bottom: 5px;
 		border-left: 3px solid $gold-soft; padding-left: 8px;
@@ -848,8 +911,11 @@ $blood-lit:  #b5303a;
 		background-position: center;
 		border: 2px solid $border;
 		border-radius: 5px;
-		overflow: hidden;
-		transition: all 0.1s ease-out;
+		// overflow visible so the hover tip can rise above the card; the rounded border still
+		// clips the illustration. A long, dramatic deal-in animation runs once on creation.
+		overflow: visible;
+		transition: box-shadow 0.12s ease-out, border-color 0.12s ease-out;
+		animation: card-draw 1.6s cubic-bezier( 0.16, 0.84, 0.24, 1 ) backwards;
 		&:hover { transform: translateY(-4px); }
 		&.sel { transform: translateY(-8px); box-shadow: 0px 0px 14px $gold; border-color: $gold; }
 	}
@@ -858,10 +924,51 @@ $blood-lit:  #b5303a;
 		flex-direction: column;
 		align-items: center;
 		padding: 14px 4px 5px 4px;
+		border-radius: 0 0 4px 4px;
 		background-image: linear-gradient( rgba(0,0,0,0), rgba(10, 7, 4, 0.92) );
 	}
+
+	// Hover reveal: explains what the card is and its live land-bonus effect.
+	.wc-tip {
+		position: absolute;
+		bottom: 100%; left: 50%;
+		width: 236px;
+		margin-bottom: 10px;
+		flex-direction: column;
+		padding: 10px 12px;
+		background-color: rgba(10, 7, 4, 0.98);
+		border: 1px solid $gold-soft;
+		border-top: 2px solid $gold;
+		border-radius: 5px;
+		box-shadow: 0px 10px 26px rgba(0,0,0,0.75);
+		opacity: 0;
+		pointer-events: none;
+		transform: translateX(-50%) translateY(8px) scale(0.96);
+		transition: opacity 0.12s ease-out, transform 0.12s ease-out;
+	}
+	.war-card:hover .wc-tip { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1); }
+	.tip-suit { font-size: 14px; letter-spacing: 2px; margin-bottom: 5px; }
+	.tip-line { font-size: 12px; color: $parchment; line-height: 16px; margin-bottom: 7px; }
+	.tip-effect {
+		font-size: 12px; line-height: 16px;
+		padding: 5px 8px; border-radius: 3px;
+		background-color: rgba(0,0,0,0.4);
+		&.good { color: #c6e8a6; border-left: 3px solid #6fae4f; }
+		&.bad { color: #ecaeae; border-left: 3px solid $blood-lit; }
+		&.neutral { color: $muted; border-left: 3px solid $gold-soft; }
+	}
+	.tip-foot { font-size: 11px; color: $gold-soft; letter-spacing: 1px; margin-top: 7px; }
 	.wc-kind { font-size: 14px; margin-top: 0px; text-shadow: 0px 1px 3px rgba(0,0,0,0.95); }
 	.wc-terr { font-size: 11px; color: $parchment; margin-top: 1px; text-align: center; text-shadow: 0px 1px 2px rgba(0,0,0,0.95); }
+
+	.tray-legend {
+		flex-direction: row; align-items: center; flex-wrap: wrap;
+		margin-top: 8px; padding-top: 6px;
+		border-top: 1px solid rgba(107, 84, 54, 0.4);
+	}
+	.legend-head { font-size: 11px; color: $gold-soft; letter-spacing: 2px; margin-right: 8px; }
+	.legend-item { font-size: 12px; color: $muted; }
+	.legend-dot { font-size: 12px; color: $gold-soft; margin: 0 6px; }
 
 	.tray-actions { flex-direction: row; margin-top: 10px; }
 	.muster-btn {
@@ -873,6 +980,57 @@ $blood-lit:  #b5303a;
 		&:hover { background-color: rgba(110, 86, 40, 1); }
 		&.disabled { opacity: 0.3; }
 	}
+
+	// Clarity line + minimize control inside the open tray.
+	.tray-hint {
+		max-width: 470px;
+		font-size: 12px; color: $muted; line-height: 17px;
+		text-align: center; margin-bottom: 8px;
+	}
+	.tray-collapse {
+		margin-left: 14px;
+		padding: 3px 10px; border-radius: 3px;
+		background-color: rgba(0,0,0,0.3); border: 1px solid $gold-soft;
+		font-size: 12px; color: $gold-soft; letter-spacing: 1px;
+		&:hover { color: #fff; border-color: $gold; }
+	}
+
+	// Minimized tab: a small pill so the board underneath stays clickable.
+	.spoils-tab {
+		position: absolute;
+		left: 50%; bottom: 16px;
+		transform: translateX(-50%);
+		flex-direction: row; align-items: center;
+		padding: 7px 16px;
+		background-color: rgba(14, 10, 7, 0.94);
+		border: 1px solid $gold-soft;
+		border-top: 2px solid $gold;
+		border-radius: 6px;
+		pointer-events: all;
+		box-shadow: 0px 6px 18px rgba(0,0,0,0.55);
+		transition: all 0.12s ease-out;
+		&:hover { border-color: $gold; background-color: rgba(28, 20, 12, 0.97); }
+		&.must { border-color: $blood-lit; }
+	}
+	.st-icon { font-size: 16px; color: $gold; margin-right: 8px; }
+	.st-label { font-size: 15px; color: $parchment; letter-spacing: 2px; margin-right: 8px; }
+	.st-count {
+		min-width: 20px; height: 20px; justify-content: center; align-items: center;
+		padding: 0px 5px; border-radius: 10px;
+		background-color: rgba(80, 62, 30, 0.9); border: 1px solid $gold-soft;
+		font-size: 13px; font-weight: bold; color: #fff;
+	}
+	.spoils-tab.must .st-count { background-color: rgba(122, 22, 32, 0.85); border-color: $blood-lit; }
+	.st-chev { font-size: 12px; color: $gold-soft; margin-left: 8px; }
+
+	// Click-through wrapper so the minimized board stays clickable; only the tab/tray catch input.
+	.spoils-root {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		pointer-events: none;
+	}
+	// Deal-in flourish lives in the `card-draw` keyframes (bottom of file), applied directly to
+	// .war-card so it fires reliably on creation — :intro keyframe animations don't run in s&box.
 
 	// ---------------------------------------------------------------- advance prompt
 	.advance-prompt {
@@ -979,6 +1137,14 @@ $blood-lit:  #b5303a;
 }
 
 // ---------------------------------------------------------------- keyframes (top-level)
+// Card deal-in: each card flies up from the deck, overshoots, and settles. ~1.6s, per-card
+// stagger applied via inline animation-delay so the hand fans out one card at a time.
+@keyframes card-draw {
+	0%   { opacity: 0; transform: translateY( 280px ) translateX( -36px ) rotate( -20deg ) scale( 0.45 ); }
+	45%  { opacity: 1; transform: translateY( -18px ) translateX( 0px ) rotate( 4deg ) scale( 1.08 ); }
+	70%  { transform: translateY( 6px ) rotate( -2deg ) scale( 0.98 ); }
+	100% { opacity: 1; transform: translateY( 0px ) translateX( 0px ) rotate( 0deg ) scale( 1 ); }
+}
 @keyframes idle-bob {
 	0%   { transform: translateY( 0px ); }
 	50%  { transform: translateY( -3px ); }

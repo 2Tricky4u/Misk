@@ -37,11 +37,21 @@
 		@* Garrison markers: the owner's faction pawn (if any) + an army-count chip + name. *@
 		@foreach ( var t in Map.Territories )
 		{
-			var unit = UnitOf( t.Id );
-			<div class="centroid-badge @(unit != null ? "has-pawn" : "")" style="left: @(t.Position.X.ToString("0.#"))px; top: @(t.Position.Y.ToString("0.#"))px;">
-				@if ( unit != null )
+			var pieces = Pieces( t.Id );
+			<div class="centroid-badge @(pieces.Count > 0 ? "has-pawn" : "")" style="left: @(t.Position.X.ToString("0.#"))px; top: @(t.Position.Y.ToString("0.#"))px;">
+				@if ( pieces.Count > 0 )
 				{
-					<div class="pawn" style="background-image: url( @unit ); animation-delay: -@(PawnDelay( t.Id ))s;"></div>
+					<div class="pawn-stack">
+						@foreach ( var p in pieces )
+						{
+							<div class="pawn-tok tier-@p.Denomination" style="background-image: url( @p.Sprite ); animation-delay: -@(p.Delay)s;">
+								@if ( p.Multiplier > 1 )
+								{
+									<div class="tok-badge">×@p.Multiplier</div>
+								}
+							</div>
+						}
+					</div>
 				}
 				<div class="troops" style="background-color: @Game.OwnerColor( t.Id );">@Game.ArmiesOf( t.Id )</div>
 				<div class="t-name">@t.Name</div>
@@ -64,21 +74,54 @@
 
 	private Panel Canvas;
 
-	// A stable per-territory idle-bob phase offset (0..3.0s) so pawns don't breathe in lockstep.
-	private static string PawnDelay( string id )
+	// A stable idle-bob phase offset so pieces don't breathe in lockstep: a per-territory base
+	// (0..3.0s) plus a per-piece stagger.
+	private static string PawnDelay( string id, int index )
 	{
 		int h = System.Math.Abs( System.StringComparer.Ordinal.GetHashCode( id ) );
-		return ( ( h % 30 ) / 10f ).ToString( "0.#", System.Globalization.CultureInfo.InvariantCulture );
+		float offset = ( h % 30 ) / 10f + index * 0.35f;
+		return offset.ToString( "0.##", System.Globalization.CultureInfo.InvariantCulture );
 	}
 
-	// The owning faction's pawn sprite for a territory, or null when unclaimed / no art.
-	private string UnitOf( string territoryId )
+	// One drawable garrison piece (named struct rather than a value tuple — Razor markup access is
+	// reliable with named members).
+	private struct Piece
+	{
+		public string Sprite;
+		public int Denomination;
+		public int Multiplier;
+		public string Delay;
+	}
+
+	// The denominated pieces to draw for a garrison: artillery (10) + cavalry (5) + infantry (1),
+	// summing to the army total. Up to two of a denomination render individually; more collapse to a
+	// single piece carrying a ×N tag (the numeric badge stays the authoritative count). Empty when the
+	// territory is unclaimed or its faction has no unit art at all.
+	private IReadOnlyList<Piece> Pieces( string territoryId )
 	{
 		var owner = Game.OwnerOf( territoryId );
 		if ( owner == null )
-			return null;
+			return System.Array.Empty<Piece>();
+
 		var f = Game.FactionOf( owner );
-		return string.IsNullOrEmpty( f?.UnitPath ) ? null : f.UnitPath;
+		if ( f == null || string.IsNullOrEmpty( f.UnitPath ) )
+			return System.Array.Empty<Piece>();
+
+		var stack = UnitStack.Decompose( Game.ArmiesOf( territoryId ), Game.Theme.ArmyTokens );
+		var list = new List<Piece>();
+		int i = 0;
+		foreach ( var tok in stack )
+		{
+			var sprite = f.UnitFor( tok.UnitKey );
+			int shown = tok.Count > 2 ? 1 : tok.Count;
+			for ( int k = 0; k < shown; k++ )
+			{
+				int mult = ( tok.Count > 2 && k == shown - 1 ) ? tok.Count : 1;
+				list.Add( new Piece { Sprite = sprite, Denomination = tok.Denomination, Multiplier = mult, Delay = PawnDelay( territoryId, i ) } );
+				i++;
+			}
+		}
+		return list;
 	}
 
 	private int Width => (int)Map.CanvasWidth;
@@ -173,6 +216,18 @@
 
 		if ( BoardInteraction.HoveredTerritoryId != hovered )
 			BoardInteraction.HoveredTerritoryId = hovered;
+
+		// QoL input: Shift = "max / blitz" modifier; ESC toggles pause; E ends the phase.
+		BoardInteraction.MaxModifier = Input.Down( "Run" );
+
+		if ( Input.EscapePressed )
+		{
+			Input.EscapePressed = false;
+			if ( UiNav.Overlay == null ) UiNav.Show( "pause" );
+			else UiNav.Close();
+		}
+		if ( Input.Pressed( "Use" ) && Game.CanActNow && !Game.InSetup && !Game.HasPendingAdvance && UiNav.Overlay == null )
+			Game.EndPhase();
 	}
 
 	// ---------------------------------------------------------------- click routing
@@ -197,6 +252,15 @@
 			return;
 		}
 
+		// Shift-click one of your lands in Reinforce = deploy ALL remaining levies there (skip menu).
+		if ( !Game.InSetup && BoardInteraction.MaxModifier && Game.CanActNow
+			&& Game.CurrentPhase == GamePhase.Reinforce
+			&& Game.OwnerOf( id ) == Game.CurrentPlayerId && Game.PendingReinforcements > 0 )
+		{
+			Game.Deploy( id, Game.PendingReinforcements );
+			return;
+		}
+
 		// Otherwise open the context action menu on this territory.
 		BoardInteraction.ActionMenuTerritoryId = id;
 	}
@@ -205,16 +269,26 @@
 	// reusing the HUD's dice / move-amount selectors.
 	private void ResolveTarget( string src, string id )
 	{
+		bool max = BoardInteraction.MaxModifier;
 		if ( Game.CurrentPhase == GamePhase.Attack )
 		{
-			int maxDice = System.Math.Min( Game.Data.Rules.AttackerMaxDice, System.Math.Max( 1, Game.ArmiesOf( src ) - 1 ) );
-			int dice = System.Math.Clamp( BoardInteraction.AttackDice, 1, maxDice );
-			Game.Attack( src, id, dice );
-			// Keep the source selected so the player can keep pressing the assault.
+			if ( max )
+			{
+				// Shift = blitz: keep assaulting this target until it falls or the source is spent.
+				Game.BeginBlitz( src, id );
+			}
+			else
+			{
+				int maxDice = System.Math.Min( Game.Data.Rules.AttackerMaxDice, System.Math.Max( 1, Game.ArmiesOf( src ) - 1 ) );
+				int dice = System.Math.Clamp( BoardInteraction.AttackDice, 1, maxDice );
+				Game.Attack( src, id, dice );
+				// Keep the source selected so the player can keep pressing the assault.
+			}
 		}
 		else if ( Game.CurrentPhase == GamePhase.Fortify )
 		{
-			int amount = System.Math.Clamp( BoardInteraction.MoveAmount, 1, System.Math.Max( 1, Game.ArmiesOf( src ) - 1 ) );
+			int maxMove = System.Math.Max( 1, Game.ArmiesOf( src ) - 1 );
+			int amount = max ? maxMove : System.Math.Clamp( BoardInteraction.MoveAmount, 1, maxMove );
 			Game.Fortify( src, id, amount );
 			BoardInteraction.SelectedTerritoryId = null;
 		}

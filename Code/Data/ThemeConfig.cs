@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Misk.Data;
 
@@ -31,8 +32,13 @@ public sealed class ThemeConfig
 	private readonly Dictionary<string, string> _fonts;
 	private readonly Dictionary<string, CardStyle> _cards;
 
+	/// <summary>Army-piece denominations for the board, sorted by value descending
+	/// (e.g. 10=artillery, 5=cavalry, 1=infantry). Always ends with a value of 1 so any count decomposes.</summary>
+	public IReadOnlyList<(int Value, string Unit)> ArmyTokens { get; }
+
 	public ThemeConfig( string id, string name, string mapBackground,
-		Dictionary<string, string> colors, Dictionary<string, string> fonts, Dictionary<string, CardStyle> cards )
+		Dictionary<string, string> colors, Dictionary<string, string> fonts, Dictionary<string, CardStyle> cards,
+		IReadOnlyList<(int Value, string Unit)> armyTokens = null )
 	{
 		Id = id;
 		Name = name;
@@ -40,6 +46,27 @@ public sealed class ThemeConfig
 		_colors = colors ?? new Dictionary<string, string>();
 		_fonts = fonts ?? new Dictionary<string, string>();
 		_cards = cards ?? new Dictionary<string, CardStyle>();
+		ArmyTokens = NormalizeTokens( armyTokens );
+	}
+
+	// Default Risk denominations, used whenever the theme omits (or under-specifies) the table.
+	private static readonly (int Value, string Unit)[] DefaultTokens =
+	{
+		(10, "artillery"), (5, "cavalry"), (1, "infantry")
+	};
+
+	// Keep only positive values, sort descending, and guarantee a 1-value piece so every army decomposes.
+	private static IReadOnlyList<(int Value, string Unit)> NormalizeTokens( IReadOnlyList<(int Value, string Unit)> tokens )
+	{
+		var list = (tokens ?? System.Array.Empty<(int, string)>())
+			.Where( t => t.Value > 0 && !string.IsNullOrEmpty( t.Unit ) )
+			.OrderByDescending( t => t.Value )
+			.ToList();
+		if ( list.Count == 0 )
+			return DefaultTokens;
+		if ( list[list.Count - 1].Value != 1 )
+			list.Add( (1, "infantry") );
+		return list;
 	}
 
 	public string Color( string key, string fallback = "#ffffff" )
@@ -60,7 +87,12 @@ public sealed class ThemeConfig
 			foreach ( var kv in dto.Cards )
 				cards[kv.Key.ToLowerInvariant()] = new CardStyle( kv.Value.Name, kv.Value.Glyph, kv.Value.Color );
 		}
-		return new ThemeConfig( dto.Id, dto.Name, dto.MapBackground, dto.Colors, dto.Fonts, cards );
+
+		var tokens = dto.ArmyTokens?
+			.Select( t => (t.Value, (t.Unit ?? "").ToLowerInvariant()) )
+			.ToList();
+
+		return new ThemeConfig( dto.Id, dto.Name, dto.MapBackground, dto.Colors, dto.Fonts, cards, tokens );
 	}
 
 	public static ThemeConfig Fallback()

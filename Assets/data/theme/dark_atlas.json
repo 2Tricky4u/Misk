@@ -24,5 +24,10 @@
     "riders":  { "name": "Riders",  "glyph": "♞", "color": "#c08a4a" },
     "siege":   { "name": "Siege",   "glyph": "⚙", "color": "#8a8580" },
     "banner":  { "name": "Banner",  "glyph": "⚑", "color": "#c9a24a" }
-  }
+  },
+  "armyTokens": [
+    { "value": 10, "unit": "artillery" },
+    { "value": 5,  "unit": "cavalry" },
+    { "value": 1,  "unit": "infantry" }
+  ]
 }

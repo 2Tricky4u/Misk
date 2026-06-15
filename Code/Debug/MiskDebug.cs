@@ -45,6 +45,17 @@ public static class MiskDebug
 		}
 	}
 
+	// Force a fresh reload of the static JSON data into the running game. Use after a hot-reload that
+	// changed the data model (factions/theme/rules), since the static cache otherwise keeps stale objects.
+	[ConCmd( "misk_reload" )]
+	public static void Reload()
+	{
+		var g = Game;
+		if ( g is null ) { Log.Info( "[misk] no game" ); return; }
+		g.RefreshStaticData();
+		Log.Info( $"[misk] static data reloaded — theme tokens={g.Theme?.ArmyTokens?.Count ?? -1}, sample units={g.Data?.Factions?.FirstOrDefault()?.Units?.Count ?? -1}" );
+	}
+
 	[ConCmd( "misk_host" )]
 	public static void Host()
 	{

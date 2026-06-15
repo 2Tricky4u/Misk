@@ -6,8 +6,14 @@
 
 <root class="combat-log">
 	<div class="log-title">CHRONICLE OF BLOOD</div>
+	@{ int lastTurn = -1; }
 	@foreach ( var line in RecentLines() )
 	{
+		@if ( line.Turn > 0 && line.Turn != lastTurn )
+		{
+			lastTurn = line.Turn;
+			<div class="log-turn">— Turn @line.Turn —</div>
+		}
 		<div class="log-line @(line.Captured ? "captured" : "")" style="border-left-color: @line.AccentHex;">
 			@line.Message
 		</div>
@@ -20,7 +26,7 @@
 	private IEnumerable<CombatLogLine> RecentLines()
 	{
 		var log = Game.CombatLog;
-		int start = System.Math.Max( 0, log.Count - 8 );
+		int start = System.Math.Max( 0, log.Count - 16 );
 		for ( int i = start; i < log.Count; i++ )
 			yield return log[i];
 	}

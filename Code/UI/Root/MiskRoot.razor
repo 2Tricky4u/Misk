@@ -55,7 +55,11 @@
 	@* Modal overlays sit above any mode (pause is in-game only). *@
 	@if ( Game is not null )
 	{
-		@if ( UiNav.Is( "pause" ) && Game.Mode == GameMode.InGame )
+		@if ( UiNav.Is( "confirm" ) )
+		{
+			<ConfirmOverlay />
+		}
+		else if ( UiNav.Is( "pause" ) && Game.Mode == GameMode.InGame )
 		{
 			<PauseMenu />
 		}

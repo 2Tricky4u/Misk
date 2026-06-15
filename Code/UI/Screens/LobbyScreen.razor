@@ -16,10 +16,23 @@
 				var canEdit = Game.CanControlSeat( seat );
 				<div class="seat-row">
 					<div class="seat-name">
-						@seat.DisplayName
+						@if ( seat.IsHuman && canEdit )
+						{
+							@{ if ( !_nameEdits.ContainsKey( seat.PlayerId ) ) _nameEdits[seat.PlayerId] = seat.DisplayName; }
+							<TextEntry class="name-input" Value:bind="@_nameEdits[seat.PlayerId]" />
+							<span class="name-save" onclick=@(() => RenameSeat( seat ))>✓</span>
+						}
+						else
+						{
+							<span>@seat.DisplayName</span>
+						}
 						@if ( !seat.IsHuman )
 						{
 							<span class="ai-tag">AI</span>
+							@if ( canEdit )
+							{
+								<span class="ai-diff" onclick=@(() => CycleAi( seat ))>@AiLabel( seat.AiLevel )</span>
+							}
 						}
 					</div>
 
@@ -60,7 +73,7 @@
 
 					@if ( Game.IsHost && Game.Seats.Count > 2 )
 					{
-						<div class="seat-remove" onclick=@(() => Game.RequestRemoveSeat( seat.PlayerId ))>✕</div>
+						<div class="seat-remove" onclick=@(() => { MiskAudio.Click(); Game.RequestRemoveSeat( seat.PlayerId ); })>✕</div>
 					}
 				</div>
 			}
@@ -69,21 +82,21 @@
 		@if ( Game.IsHost && Game.Seats.Count < MaxSeats )
 		{
 			<div class="seat-add-row">
-				<div class="add-button" onclick=@(() => Game.RequestAddSeat( true ))>＋ Add AI</div>
+				<div class="add-button" onclick=@(() => { MiskAudio.Click(); Game.RequestAddSeat( true ); })>＋ Add AI</div>
 				@if ( Game.IsHotseat )
 				{
-					<div class="add-button" onclick=@(() => Game.RequestAddSeat( false ))>＋ Add Player</div>
+					<div class="add-button" onclick=@(() => { MiskAudio.Click(); Game.RequestAddSeat( false ); })>＋ Add Player</div>
 				}
 			</div>
 		}
 
 		<div class="lobby-actions">
-			<div class="back-button" onclick=@(() => Game.ReturnToMenu())>Abandon</div>
+			<div class="back-button" onclick=@AbandonLobby>Abandon</div>
 			@if ( Game.IsHost )
 			{
 				<div class="start-col">
 					<div class="start-button @(CanStart ? "" : "disabled")"
-						 onclick=@(() => { if ( CanStart ) Game.RequestStart(); })>
+						 onclick=@(() => { if ( CanStart ) { MiskAudio.Click(); Game.RequestStart(); } })>
 						March to War
 					</div>
 					@if ( !CanStart )
@@ -102,6 +115,9 @@
 
 @code {
 	private MiskGame Game => MiskGame.Current;
+
+	// Per-seat in-progress name edits (committed to the host on ✓). Keyed by seat PlayerId.
+	private readonly System.Collections.Generic.Dictionary<string, string> _nameEdits = new();
 
 	private string MapName => Game?.Data?.Map?.Name ?? "Unknown lands";
 	private string ModeLabel => Game.IsHotseat ? "Hotseat" : "Online";
@@ -137,6 +153,7 @@
 	{
 		if ( !canEdit || takenByOther )
 			return;
+		MiskAudio.Click();
 		Game.RequestSetFaction( seat.PlayerId, factionId );
 	}
 
@@ -144,8 +161,36 @@
 	{
 		if ( !canEdit )
 			return;
+		MiskAudio.Click();
 		Game.RequestSetReady( seat.PlayerId, !seat.IsReady );
 	}
+
+	private void RenameSeat( SeatInfo seat )
+	{
+		MiskAudio.Click();
+		var name = _nameEdits.TryGetValue( seat.PlayerId, out var n ) ? n : seat.DisplayName;
+		Game.RequestSetDisplayName( seat.PlayerId, name );
+	}
+
+	private void AbandonLobby()
+	{
+		MiskAudio.Click();
+		UiNav.Confirm( "Abandon the Council?", "The war party will disband and you will return to the main menu.",
+			"Abandon", () => Game.ReturnToMenu() );
+	}
+
+	private void CycleAi( SeatInfo seat )
+	{
+		MiskAudio.Click();
+		Game.RequestSetAiLevel( seat.PlayerId, ( seat.AiLevel + 1 ) % 3 );
+	}
+
+	private static string AiLabel( int level ) => level switch
+	{
+		0 => "Cautious",
+		2 => "Ruthless",
+		_ => "Seasoned",
+	};
 
 	private bool CanStart
 	{
