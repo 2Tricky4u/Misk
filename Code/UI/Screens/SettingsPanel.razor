@@ -1,0 +1,49 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@namespace Misk.UI
+@inherits Panel
+
+<root class="overlay-screen">
+	<div class="overlay-card">
+		<div class="overlay-title">SETTINGS</div>
+
+		<div class="set-row">
+			<div class="set-label">Music</div>
+			<div class="vol-bars">
+				@for ( int i = 1; i <= 5; i++ )
+				{
+					var lvl = i;
+					<div class="vol-seg @(MiskAudio.MusicVolume >= ( lvl - 0.5f ) / 5f ? "on" : "")"
+						 onclick=@(() => MiskAudio.SetMusicVolume( lvl / 5f ))></div>
+				}
+			</div>
+		</div>
+
+		<div class="set-row">
+			<div class="set-label">Battle din</div>
+			<div class="vol-bars">
+				@for ( int i = 1; i <= 5; i++ )
+				{
+					var lvl = i;
+					<div class="vol-seg @(MiskAudio.SfxVolume >= ( lvl - 0.5f ) / 5f ? "on" : "")"
+						 onclick=@(() => SetSfx( lvl / 5f ))></div>
+				}
+			</div>
+		</div>
+
+		<div class="overlay-button" onclick=@(() => UiNav.Close())>Close</div>
+	</div>
+</root>
+
+@code {
+	// Adjust SFX volume and play a short blip so the new level is audible.
+	private void SetSfx( float v )
+	{
+		MiskAudio.SetSfxVolume( v );
+		MiskAudio.Play( "dice" );
+	}
+
+	protected override int BuildHash()
+		=> System.HashCode.Combine( UiNav.Overlay, (int)( MiskAudio.MusicVolume * 100 ), (int)( MiskAudio.SfxVolume * 100 ) );
+}

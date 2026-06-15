@@ -5,6 +5,7 @@
 @inherits Panel
 
 <root class="main-menu">
+	<div class="menu-scrim"></div>
 	<div class="mm-title">MISK</div>
 	<div class="mm-subtitle">THE SUNDERING REALMS</div>
 
@@ -15,9 +16,18 @@
 	else
 	{
 		<div class="mm-panel">
+			<div class="mm-section-label">SKIRMISH — CHOOSE AI OPPONENTS</div>
+			<div class="mm-row">
+				@for ( int i = 1; i <= MaxSeats - 1; i++ )
+				{
+					var ai = i;
+					<div class="mm-small-button" onclick=@(() => { MiskAudio.Click(); Game.StartSkirmish( ai ); })>@ai</div>
+				}
+			</div>
+
 			<div class="mm-section-label">ONLINE</div>
-			<div class="mm-button" onclick=@(() => Game.StartOnlineHosting())>Host a War</div>
-			<div class="mm-button" onclick=@(() => Game.JoinAny())>Join a War</div>
+			<div class="mm-button" onclick=@(() => { MiskAudio.Click(); Game.StartOnlineHosting(); })>Host a War</div>
+			<div class="mm-button" onclick=@(() => { MiskAudio.Click(); Game.JoinAny(); })>Join a War</div>
 			@if ( !string.IsNullOrEmpty( Game.JoinStatus ) )
 			{
 				<div class="mm-status">@Game.JoinStatus</div>
@@ -28,8 +38,13 @@
 				@for ( int i = 2; i <= MaxSeats; i++ )
 				{
 					var count = i;
-					<div class="mm-small-button" onclick=@(() => Game.StartHotseatSetup( count ))>@count</div>
+					<div class="mm-small-button" onclick=@(() => { MiskAudio.Click(); Game.StartHotseatSetup( count ); })>@count</div>
 				}
+			</div>
+
+			<div class="mm-footer">
+				<div class="mm-link" onclick=@(() => { MiskAudio.Click(); UiNav.Show( "help" ); })>How to Play</div>
+				<div class="mm-link" onclick=@(() => { MiskAudio.Click(); UiNav.Show( "settings" ); })>Settings</div>
 			</div>
 		</div>
 	}

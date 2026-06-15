@@ -1,0 +1,7 @@
+{
+	"UI": true,
+	"Volume": 0.85,
+	"Sounds": [
+		"sounds/sfx_defeat.mp3"
+	]
+}

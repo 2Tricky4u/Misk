@@ -1,5 +1,6 @@
 @using Sandbox
 @using Sandbox.UI
+@using System.Linq
 @using Misk.Presentation
 @using Misk.Domain
 @namespace Misk.UI
@@ -31,6 +32,7 @@
 		else if ( Game.CurrentPhase == GamePhase.Reinforce )
 		{
 			<div class="hud-reinf">Levies: @Game.PendingReinforcements</div>
+			<div class="hud-reinf hud-sub">@BaseReinf base + @RegionReinf region</div>
 			<div class="hud-reinf">Cards: @Game.CardCountOf( Game.CurrentPlayerId )</div>
 		}
 
@@ -41,7 +43,7 @@
 				@for ( int d = 1; d <= MaxDice; d++ )
 				{
 					var dd = d;
-					<div class="dice-opt @(EffectiveDice == dd ? "on" : "")" onclick=@(() => BoardInteraction.AttackDice = dd)>@dd</div>
+					<div class="dice-opt @(EffectiveDice == dd ? "on" : "")" onclick=@(() => { MiskAudio.Click(); BoardInteraction.AttackDice = dd; })>@dd</div>
 				}
 			</div>
 		}
@@ -97,6 +99,22 @@
 				GamePhase.Fortify => "FORTIFY",
 				_ => ""
 			};
+		}
+	}
+
+	// Reinforcement income breakdown for the current player (this turn, before card trades).
+	private int OwnedCount => Game.Map.Territories.Count( t => Game.OwnerOf( t.Id ) == Game.CurrentPlayerId );
+	private int BaseReinf => System.Math.Max( Game.Data.Rules.MinReinforcements,
+		OwnedCount / System.Math.Max( 1, Game.Data.Rules.TerritoriesPerReinforcement ) );
+	private int RegionReinf
+	{
+		get
+		{
+			int sum = 0;
+			foreach ( var r in Game.Map.Regions )
+				if ( Game.Map.RegionFullyOwnedBy( r.Id, Game.CurrentPlayerId ) )
+					sum += r.Bonus;
+			return sum;
 		}
 	}
 
@@ -160,6 +178,7 @@
 
 	private void Step( int delta )
 	{
+		MiskAudio.Click();
 		BoardInteraction.MoveAmount = System.Math.Clamp( BoardInteraction.MoveAmount + delta, 1, 99 );
 	}
 

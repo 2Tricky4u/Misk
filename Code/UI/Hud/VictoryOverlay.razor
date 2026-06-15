@@ -1,5 +1,6 @@
 @using Sandbox
 @using Sandbox.UI
+@using System.Linq
 @using Misk.Presentation
 @using Misk.Domain
 @namespace Misk.UI
@@ -15,9 +16,19 @@
 		<div class="victory-faction" style="color: @Accent;">@(HasSigil ? "" : Glyph) @WinnerName</div>
 		<div class="victory-sub">All the realms kneel to one banner.</div>
 
+		<div class="victory-stats">
+			<div class="vstat"><div class="vstat-num">@Game.TurnNumber</div><div class="vstat-lbl">TURNS</div></div>
+			<div class="vstat"><div class="vstat-num">@RealmsHeld/@TotalRealms</div><div class="vstat-lbl">REALMS</div></div>
+			<div class="vstat"><div class="vstat-num">@Game.BattlesFought</div><div class="vstat-lbl">BATTLES</div></div>
+			<div class="vstat"><div class="vstat-num">@Game.Captures</div><div class="vstat-lbl">CONQUESTS</div></div>
+		</div>
+
 		@if ( Game.IsHost )
 		{
-			<div class="victory-button" onclick=@(() => Game.ReturnToMenu())>Begin Anew</div>
+			<div class="victory-actions">
+				<div class="victory-button" onclick=@(() => Game.Rematch())>Rematch</div>
+				<div class="victory-button alt" onclick=@(() => Game.ReturnToMenu())>Main Menu</div>
+			</div>
 		}
 		else
 		{
@@ -34,6 +45,9 @@
 	private string Glyph => Winner?.Glyph ?? "♛";
 	private string Accent => Winner?.Accent ?? "#c9a24a";
 	private bool HasSigil => Winner != null && !string.IsNullOrEmpty( Winner.SigilPath );
+
+	private int TotalRealms => Game.Map.Territories.Count;
+	private int RealmsHeld => Game.Map.Territories.Count( t => Game.OwnerOf( t.Id ) == Game.WinnerPlayerId );
 
 	protected override int BuildHash() => System.HashCode.Combine( Game?.WinnerPlayerId, Game?.ViewHash ?? 0 );
 }

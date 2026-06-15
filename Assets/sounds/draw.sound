@@ -1,0 +1,7 @@
+{
+	"UI": true,
+	"Volume": 0.65,
+	"Sounds": [
+		"sounds/sfx_draw.mp3"
+	]
+}

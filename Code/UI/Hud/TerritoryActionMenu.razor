@@ -104,6 +104,7 @@
 	{
 		if ( !item.Enabled )
 			return;
+		MiskAudio.Click();
 		item.Do?.Invoke();
 		BoardInteraction.CloseMenu();
 	}

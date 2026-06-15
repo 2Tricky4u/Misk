@@ -15,7 +15,13 @@
 			{
 				var canEdit = Game.CanControlSeat( seat );
 				<div class="seat-row">
-					<div class="seat-name">@seat.DisplayName</div>
+					<div class="seat-name">
+						@seat.DisplayName
+						@if ( !seat.IsHuman )
+						{
+							<span class="ai-tag">AI</span>
+						}
+					</div>
 
 					<div class="faction-chips">
 						@foreach ( var faction in Game.Data.Factions )
@@ -40,21 +46,50 @@
 						}
 					</div>
 
-					<div class="ready-tag @(seat.IsReady ? "is-ready" : "not-ready")"
-						 onclick=@(() => ToggleReady( seat, canEdit ))>
-						@(seat.IsReady ? "READY" : "NOT READY")
-					</div>
+					@if ( seat.IsHuman )
+					{
+						<div class="ready-tag @(seat.IsReady ? "is-ready" : "not-ready")"
+							 onclick=@(() => ToggleReady( seat, canEdit ))>
+							@(seat.IsReady ? "READY" : "NOT READY")
+						</div>
+					}
+					else
+					{
+						<div class="ready-tag is-ready">AI · READY</div>
+					}
+
+					@if ( Game.IsHost && Game.Seats.Count > 2 )
+					{
+						<div class="seat-remove" onclick=@(() => Game.RequestRemoveSeat( seat.PlayerId ))>✕</div>
+					}
 				</div>
 			}
 		</div>
+
+		@if ( Game.IsHost && Game.Seats.Count < MaxSeats )
+		{
+			<div class="seat-add-row">
+				<div class="add-button" onclick=@(() => Game.RequestAddSeat( true ))>＋ Add AI</div>
+				@if ( Game.IsHotseat )
+				{
+					<div class="add-button" onclick=@(() => Game.RequestAddSeat( false ))>＋ Add Player</div>
+				}
+			</div>
+		}
 
 		<div class="lobby-actions">
 			<div class="back-button" onclick=@(() => Game.ReturnToMenu())>Abandon</div>
 			@if ( Game.IsHost )
 			{
-				<div class="start-button @(CanStart ? "" : "disabled")"
-					 onclick=@(() => { if ( CanStart ) Game.RequestStart(); })>
-					March to War
+				<div class="start-col">
+					<div class="start-button @(CanStart ? "" : "disabled")"
+						 onclick=@(() => { if ( CanStart ) Game.RequestStart(); })>
+						March to War
+					</div>
+					@if ( !CanStart )
+					{
+						<div class="start-hint">@StartBlockedReason</div>
+					}
 				</div>
 			}
 			else
@@ -70,6 +105,23 @@
 
 	private string MapName => Game?.Data?.Map?.Name ?? "Unknown lands";
 	private string ModeLabel => Game.IsHotseat ? "Hotseat" : "Online";
+	private int MaxSeats => System.Math.Min( 6, Game?.Data?.Factions.Count ?? 6 );
+
+	private string StartBlockedReason
+	{
+		get
+		{
+			if ( Game.Seats.Count < 2 )
+				return "Two warlords are needed for war.";
+			foreach ( var s in Game.Seats )
+				if ( string.IsNullOrEmpty( s.FactionId ) )
+					return $"{s.DisplayName} has chosen no banner.";
+			foreach ( var s in Game.Seats )
+				if ( !s.IsReady )
+					return $"{s.DisplayName} is not ready.";
+			return "";
+		}
+	}
 
 	private bool IsTakenByOther( string factionId, string seatPlayerId )
 	{

@@ -1,0 +1,27 @@
+@using Sandbox
+@using Sandbox.UI
+@using Misk.Presentation
+@namespace Misk.UI
+@inherits Panel
+
+<root class="overlay-screen">
+	<div class="overlay-card">
+		<div class="overlay-title">WAR COUNCIL</div>
+		<div class="overlay-button" onclick=@(() => { MiskAudio.Click(); UiNav.Close(); })>Resume</div>
+		<div class="overlay-button" onclick=@(() => { MiskAudio.Click(); UiNav.Show( "settings" ); })>Settings</div>
+		<div class="overlay-button" onclick=@(() => { MiskAudio.Click(); UiNav.Show( "help" ); })>How to Play</div>
+		<div class="overlay-button danger" onclick=@Resign>Resign to Menu</div>
+	</div>
+</root>
+
+@code {
+	private MiskGame Game => MiskGame.Current;
+
+	private void Resign()
+	{
+		UiNav.Close();
+		Game?.ReturnToMenu();
+	}
+
+	protected override int BuildHash() => System.HashCode.Combine( UiNav.Overlay, Game?.ViewHash ?? 0 );
+}

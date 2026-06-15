@@ -1,0 +1,7 @@
+{
+	"UI": true,
+	"Volume": 0.5,
+	"Sounds": [
+		"sounds/sfx_click.mp3"
+	]
+}

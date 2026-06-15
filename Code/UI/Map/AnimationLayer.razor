@@ -65,8 +65,14 @@
 				for ( int di = 0; di < fx.AttackerDice.Length; di++ )
 				{
 					int face = t < 0.55f ? 1 + (int)( ( Time.Now * 23f + di * 5f ) % 6f ) : fx.AttackerDice[di];
-					float dx = to.X - ( fx.AttackerDice.Length - 1 ) * 17f + di * 34f;
-					<div class="die atk" style="left: @F(dx)px; top: @F(to.Y - 98f)px; opacity: @F(diceO);">@face</div>
+					float dx = to.X - ( fx.AttackerDice.Length - 1 ) * 19f + di * 38f;
+					var pips = Pips( face );
+					<div class="die atk" style="left: @F(dx)px; top: @F(to.Y - 102f)px; opacity: @F(diceO);">
+						@for ( int p = 0; p < 9; p++ )
+						{
+							<div class="pip @(pips[p] ? "on" : "")"></div>
+						}
+					</div>
 				}
 			}
 			if ( fx.DefenderDice != null )
@@ -74,8 +80,14 @@
 				for ( int di = 0; di < fx.DefenderDice.Length; di++ )
 				{
 					int face = t < 0.55f ? 1 + (int)( ( Time.Now * 19f + di * 7f ) % 6f ) : fx.DefenderDice[di];
-					float dx = to.X - ( fx.DefenderDice.Length - 1 ) * 17f + di * 34f;
-					<div class="die def" style="left: @F(dx)px; top: @F(to.Y - 60f)px; opacity: @F(diceO);">@face</div>
+					float dx = to.X - ( fx.DefenderDice.Length - 1 ) * 19f + di * 38f;
+					var pips = Pips( face );
+					<div class="die def" style="left: @F(dx)px; top: @F(to.Y - 58f)px; opacity: @F(diceO);">
+						@for ( int p = 0; p < 9; p++ )
+						{
+							<div class="pip @(pips[p] ? "on" : "")"></div>
+						}
+					</div>
 				}
 			}
 		}
@@ -125,6 +137,23 @@
 	private static float Clamp01( float v ) => System.Math.Clamp( v, 0f, 1f );
 	private static float Smooth( float t ) { t = Clamp01( t ); return t * t * ( 3f - 2f * t ); }
 	private static string F( float v ) => v.ToString( "0.##", System.Globalization.CultureInfo.InvariantCulture );
+
+	// Which of the 9 cells (row-major 3x3) carry a pip for a given die face.
+	private static bool[] Pips( int f )
+	{
+		var p = new bool[9];
+		void S( params int[] idx ) { foreach ( var i in idx ) p[i] = true; }
+		switch ( System.Math.Clamp( f, 1, 6 ) )
+		{
+			case 1: S( 4 ); break;
+			case 2: S( 0, 8 ); break;
+			case 3: S( 0, 4, 8 ); break;
+			case 4: S( 0, 2, 6, 8 ); break;
+			case 5: S( 0, 2, 4, 6, 8 ); break;
+			case 6: S( 0, 2, 3, 5, 6, 8 ); break;
+		}
+		return p;
+	}
 
 	public override void Tick()
 	{

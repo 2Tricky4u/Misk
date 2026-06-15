@@ -1,0 +1,7 @@
+{
+	"UI": true,
+	"Volume": 0.5,
+	"Sounds": [
+		"sounds/music_menu_ambient.mp3"
+	]
+}

@@ -46,10 +46,32 @@
 			<VictoryOverlay />
 		}
 	}
+	@* In-game pause gear (hidden while an overlay is open or the war is decided). *@
+	@if ( Game is not null && Game.Mode == GameMode.InGame && Game.WinnerPlayerId is null && UiNav.Overlay is null )
+	{
+		<div class="pause-gear" onclick=@(() => { MiskAudio.Click(); UiNav.Show( "pause" ); })>⚙</div>
+	}
+
+	@* Modal overlays sit above any mode (pause is in-game only). *@
+	@if ( Game is not null )
+	{
+		@if ( UiNav.Is( "pause" ) && Game.Mode == GameMode.InGame )
+		{
+			<PauseMenu />
+		}
+		else if ( UiNav.Is( "settings" ) )
+		{
+			<SettingsPanel />
+		}
+		else if ( UiNav.Is( "help" ) )
+		{
+			<HelpScreen />
+		}
+	}
 </root>
 
 @code {
 	private MiskGame Game => MiskGame.Current;
 
-	protected override int BuildHash() => Game?.ViewHash ?? 0;
+	protected override int BuildHash() => System.HashCode.Combine( Game?.ViewHash ?? 0, UiNav.Overlay );
 }

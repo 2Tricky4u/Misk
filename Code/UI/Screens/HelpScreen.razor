@@ -1,0 +1,38 @@
+@using Sandbox
+@using Sandbox.UI
+@namespace Misk.UI
+@inherits Panel
+
+<root class="overlay-screen">
+	<div class="overlay-card help-card">
+		<div class="overlay-title">HOW TO WAGE WAR</div>
+
+		<div class="help-scroll">
+			<div class="help-h">The goal</div>
+			<div class="help-p">Conquer every realm on the map. The last banner standing wins the war.</div>
+
+			<div class="help-h">The draft</div>
+			<div class="help-p">At the start, warlords take turns to claim empty realms, then muster their starting levies onto lands they hold.</div>
+
+			<div class="help-h">A turn has three phases</div>
+			<div class="help-p">1 · Reinforce — receive new levies: 1 per 3 realms (min 3) + region bonuses for holding a whole region. Click a realm to deploy them. You may trade card sets here.</div>
+			<div class="help-p">2 · Assault — pick one of your realms (2+ levies), then an adjacent enemy realm. Choose how many dice to roll; the defender rolls automatically. Highest dice win; ties go to the defender. Take a realm by reducing its garrison to zero.</div>
+			<div class="help-p">3 · Fortify — once per turn, move levies between two of your adjacent realms, then end your turn.</div>
+
+			<div class="help-h">Advancing after a capture</div>
+			<div class="help-p">When you seize a realm you choose how many levies to pour forward (at least the dice you rolled, at most all but one).</div>
+
+			<div class="help-h">War spoils (cards)</div>
+			<div class="help-p">Capture at least one realm in a turn and you draw a card. Trade a set of three — all alike, all different, or any pair with a Banner (wild) — for levies. Each set traded is worth more than the last. Holding too many cards forces a trade.</div>
+
+			<div class="help-h">Winning</div>
+			<div class="help-p">Eliminate a warlord and you seize their war spoils. Hold every realm to win.</div>
+		</div>
+
+		<div class="overlay-button" onclick=@(() => UiNav.Close())>Close</div>
+	</div>
+</root>
+
+@code {
+	protected override int BuildHash() => UiNav.Overlay?.GetHashCode() ?? 0;
+}

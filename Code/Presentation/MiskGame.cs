@@ -45,6 +45,10 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 	[Sync] public NetDictionary<string, int> CardCounts { get; set; } = new();
 	[Sync] public int CardSetsTradedIn { get; set; }
 
+	// match stats for the victory summary (host-accumulated, synced)
+	[Sync] public int BattlesFought { get; set; }
+	[Sync] public int Captures { get; set; }
+
 	// pending capture advance (Min < 0 means none)
 	[Sync] public string PendingAdvanceFrom { get; set; }
 	[Sync] public string PendingAdvanceTo { get; set; }
@@ -195,24 +199,39 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 	// (Facepunch sbox-issues #8365 — cursor shows but clicks never register).
 
 	private bool _victoryPlayed;
+	private float _lastAiStep;
+	private const float AiStepInterval = 0.45f;
 
 	protected override void OnUpdate()
 	{
-		// Music bed runs through play and the victory screen; silenced in menu/lobby. EnsureMusic
-		// loops it. Synced Mode means every client plays its own local audio.
-		bool inGame = Mode == GameMode.InGame || Mode == GameMode.GameOver;
-		if ( inGame )
+		// Music bed: a calmer theme in menu/lobby, the war bed in-game and on the victory screen.
+		// EnsureMusic loops and switches tracks. Synced Mode means every client plays local audio.
+		if ( Mode == GameMode.InGame || Mode == GameMode.GameOver )
 			MiskAudio.EnsureMusic( "music" );
 		else
 		{
-			MiskAudio.StopMusic();
+			MiskAudio.EnsureMusic( "music_menu" );
 			_victoryPlayed = false;
 		}
 
 		if ( Mode == GameMode.GameOver && WinnerPlayerId != null && !_victoryPlayed )
 		{
 			_victoryPlayed = true;
-			MiskAudio.Play( "horn" );
+			MiskAudio.Play( "victory" );
+		}
+
+		// Drive AI seats one watchable action per interval. Host-authoritative; the AI uses the
+		// same public wrappers as the UI (which only validate the caller when networking is active,
+		// so this covers single-player / hotseat). Online AI is out of scope.
+		if ( IsAuthority && Mode == GameMode.InGame && WinnerPlayerId == null
+			&& Time.Now - _lastAiStep > AiStepInterval )
+		{
+			var seat = SeatOf( CurrentPlayerId );
+			if ( seat.HasValue && !seat.Value.IsHuman )
+			{
+				_lastAiStep = Time.Now;
+				MiskAI.Step( this );
+			}
 		}
 	}
 

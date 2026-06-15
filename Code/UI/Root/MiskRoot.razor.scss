@@ -56,15 +56,30 @@ $blood-lit:  #b5303a;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		background-image: linear-gradient( $ink, #1d150f );
+		background-color: $ink;
+		background-image: url( data/theme/maps/menu_bg.png );
+		background-size: cover;
+		background-position: center;
+	}
+	// Dark scrim over the painted backdrop so the title/menu stay readable.
+	.menu-scrim {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		pointer-events: none;
+		background-image: linear-gradient( rgba(8, 5, 3, 0.5), rgba(8, 5, 3, 0.82) );
 	}
 	.mm-title {
-		font-size: 78px;
+		font-size: 96px;
 		color: $gold;
-		letter-spacing: 10px;
-		text-shadow: 0px 4px 14px rgba(0,0,0,0.8);
+		letter-spacing: 14px;
+		text-shadow: 0px 0px 30px rgba(201, 162, 74, 0.45), 0px 5px 16px rgba(0,0,0,0.95);
 	}
-	.mm-subtitle { font-size: 22px; color: $muted; letter-spacing: 4px; margin-bottom: 46px; }
+	.mm-subtitle {
+		font-size: 22px; color: $parchment; letter-spacing: 8px; margin-bottom: 44px;
+		text-shadow: 0px 2px 6px rgba(0,0,0,0.9);
+		padding-bottom: 10px;
+		border-bottom: 1px solid rgba(201, 162, 74, 0.4);
+	}
 
 	.mm-panel {
 		flex-direction: column;
@@ -119,7 +134,10 @@ $blood-lit:  #b5303a;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		background-image: linear-gradient( $ink, #1d150f );
+		background-color: $ink;
+		background-image: url( data/theme/maps/menu_bg.png );
+		background-size: cover;
+		background-position: center;
 	}
 	.lobby-panel {
 		flex-direction: column;
@@ -198,6 +216,117 @@ $blood-lit:  #b5303a;
 		font-size: 18px; color: $muted;
 		&:hover { color: $text; }
 	}
+	// AI seats + seat management
+	.ai-tag {
+		margin-left: 8px;
+		padding: 2px 8px;
+		border-radius: 3px;
+		background-color: rgba(106, 58, 154, 0.5);
+		border: 1px solid #a878d4;
+		font-size: 12px; color: #e8dcc0; letter-spacing: 1px;
+	}
+	.seat-remove {
+		justify-content: center; align-items: center;
+		width: 30px; height: 30px;
+		margin-left: 8px;
+		border-radius: 3px;
+		background-color: rgba(0,0,0,0.3);
+		border: 1px solid rgba(122, 22, 32, 0.7);
+		font-size: 16px; color: $muted;
+		&:hover { color: $blood-lit; border-color: $blood-lit; }
+	}
+	.seat-add-row { flex-direction: row; margin-top: 12px; }
+	.add-button {
+		justify-content: center; align-items: center;
+		padding: 8px 18px; margin-right: 10px;
+		background-color: $panel-soft;
+		border: 1px dashed $gold-soft;
+		border-radius: 4px;
+		font-size: 15px; color: $parchment; letter-spacing: 1px;
+		&:hover { border-color: $gold; color: #fff; }
+		&:active { transform: scale(0.96); }
+	}
+	.start-col { flex-direction: column; align-items: flex-end; }
+	.start-hint { margin-top: 6px; font-size: 13px; color: $blood-lit; letter-spacing: 1px; }
+
+	// ---------------------------------------------------------------- main-menu footer links
+	.mm-footer { flex-direction: row; justify-content: center; margin-top: 18px; }
+	.mm-link {
+		padding: 6px 16px; margin: 0px 6px;
+		font-size: 15px; color: $muted; letter-spacing: 1px;
+		&:hover { color: $gold; }
+		&:active { transform: scale(0.96); }
+	}
+
+	// ---------------------------------------------------------------- pause gear
+	.pause-gear {
+		position: absolute;
+		top: 16px; right: 20px;
+		width: 44px; height: 44px;
+		justify-content: center; align-items: center;
+		border-radius: 50%;
+		background-color: rgba(14, 10, 7, 0.8);
+		border: 1px solid $border;
+		font-size: 24px; color: $parchment;
+		pointer-events: all;
+		&:hover { color: $gold; border-color: $gold; }
+		&:active { transform: scale(0.92); }
+	}
+
+	// ---------------------------------------------------------------- modal overlays (pause / settings / help)
+	.overlay-screen {
+		position: absolute;
+		left: 0; top: 0; width: 100%; height: 100%;
+		justify-content: center; align-items: center;
+		background-color: rgba(8, 5, 3, 0.78);
+		pointer-events: all;
+	}
+	.overlay-card {
+		flex-direction: column;
+		align-items: stretch;
+		min-width: 420px;
+		background-color: $panel;
+		border: 2px solid #2a1f15;
+		border-top: 3px solid $gold;
+		border-radius: 6px;
+		padding: 28px 34px;
+		// Carved-frame feel: an inner gold hairline + deep drop shadow.
+		box-shadow: inset 0px 0px 0px 1px rgba(201, 162, 74, 0.4), 0px 14px 40px rgba(0,0,0,0.72);
+	}
+	.overlay-title {
+		font-size: 30px; color: $gold; letter-spacing: 4px;
+		text-align: center; margin-bottom: 22px;
+	}
+	.overlay-button {
+		justify-content: center; align-items: center;
+		padding: 14px 0px; margin-bottom: 12px;
+		background-color: $panel-soft;
+		border: 1px solid $gold-soft;
+		border-radius: 4px;
+		font-size: 20px; color: $text; letter-spacing: 2px;
+		transition: all 0.12s ease-out;
+		&:hover { background-color: rgba(80, 62, 30, 0.95); border-color: $gold; color: #fff; }
+		&:active { transform: scale(0.97); }
+	}
+	.overlay-button.danger {
+		border-color: rgba(122, 22, 32, 0.8);
+		&:hover { background-color: rgba(122, 22, 32, 0.6); border-color: $blood-lit; }
+	}
+	.set-row { flex-direction: row; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+	.set-label { font-size: 18px; color: $parchment; letter-spacing: 1px; }
+	.vol-bars { flex-direction: row; }
+	.vol-seg {
+		width: 28px; height: 26px; margin-left: 6px;
+		border-radius: 3px;
+		background-color: rgba(0,0,0,0.4);
+		border: 1px solid $gold-soft;
+		&.on { background-color: $gold; }
+		&:hover { border-color: $gold; }
+	}
+	.help-card { max-width: 720px; }
+	.help-scroll { flex-direction: column; max-height: 460px; overflow: scroll; padding-right: 8px; }
+	.help-h { font-size: 19px; color: $gold; letter-spacing: 2px; margin: 14px 0px 4px 0px; }
+	.help-p { font-size: 16px; color: $text; margin-bottom: 4px; }
 
 	// ---------------------------------------------------------------- map / board
 	.map-view {
@@ -299,7 +428,7 @@ $blood-lit:  #b5303a;
 	}
 	// drop-shadow hugs the silhouette's alpha, so the glow follows the territory edge.
 	.territory-fill.hovered  { opacity: 0.26; filter: drop-shadow(0px 0px 16px rgba(232, 220, 192, 0.6)); }
-	.territory-fill.selected { opacity: 0.38; filter: drop-shadow(0px 0px 20px rgba(201, 162, 74, 0.95)); }
+	.territory-fill.selected { opacity: 0.38; filter: drop-shadow(0px 0px 20px rgba(201, 162, 74, 0.95)); animation: select-pulse 1.2s ease-in-out infinite; }
 	.territory-fill.valid    { opacity: 0.22; filter: drop-shadow(0px 0px 14px rgba(181, 48, 58, 0.85)); }
 	.territory-fill.valid.hovered { opacity: 0.36; filter: drop-shadow(0px 0px 20px rgba(181, 48, 58, 1)); }
 
@@ -404,21 +533,22 @@ $blood-lit:  #b5303a;
 		font-weight: bold;
 		text-shadow: 0px 2px 4px rgba(0,0,0,0.95);
 	}
-	// Rolled combat dice (face value set per frame in C#).
+	// Rolled combat dice — a 3x3 pip grid (faces set per frame in C#).
 	.die {
 		position: absolute;
-		justify-content: center;
-		align-items: center;
-		width: 30px; height: 30px;
+		flex-direction: row;
+		flex-wrap: wrap;
+		width: 36px; height: 36px;
+		padding: 3px;
 		transform: translate(-50%, -50%);
-		border-radius: 5px;
-		font-size: 19px;
-		font-weight: bold;
-		text-shadow: 0px 1px 2px rgba(0,0,0,0.9);
+		border-radius: 6px;
 		box-shadow: 0px 2px 6px rgba(0,0,0,0.6);
 	}
-	.die.atk { background-color: #8a1c2b; color: #ffeede; border: 1px solid #e0566a; }
-	.die.def { background-color: #d8cdb0; color: #2b2118; border: 1px solid #8a8580; }
+	.die.atk { background-color: #8a1c2b; border: 1px solid #e0566a; }
+	.die.def { background-color: #d8cdb0; border: 1px solid #8a8580; }
+	.pip { width: 33%; height: 33%; }
+	.die.atk .pip.on { background-image: radial-gradient( #ffe9d9, rgba(138, 28, 43, 0) ); }
+	.die.def .pip.on { background-image: radial-gradient( #2b2118, rgba(216, 205, 176, 0) ); }
 
 	// Full-screen capture flash.
 	.flash-layer {
@@ -529,11 +659,11 @@ $blood-lit:  #b5303a;
 		flex-direction: column;
 		margin-right: 18px;
 		background-color: $panel;
-		border: 1px solid $border;
+		border: 2px solid #2a1f15;
 		border-left: 3px solid $gold;
 		border-radius: 6px;
 		padding: 16px 18px;
-		box-shadow: 0px 8px 24px rgba(0,0,0,0.6);
+		box-shadow: inset 0px 0px 0px 1px rgba(201, 162, 74, 0.3), 0px 8px 24px rgba(0,0,0,0.6);
 	}
 	.ri-head { flex-direction: row; align-items: center; margin-bottom: 12px; }
 	.ri-sigil {
@@ -610,7 +740,8 @@ $blood-lit:  #b5303a;
 		border: 1px solid $border; border-radius: 20px;
 		font-size: 17px; color: $gold; letter-spacing: 2px;
 	}
-	.hud-reinf { font-size: 18px; color: $text; margin: 0 10px; }
+	.hud-reinf { font-size: 18px; color: $text; margin: 0px 10px; }
+	.hud-reinf.hud-sub { font-size: 13px; color: $muted; margin: 0px 10px; letter-spacing: 0px; }
 	.hud-spacer { flex-grow: 1; }
 
 	.stepper { flex-direction: row; align-items: center; margin: 0 10px; }
@@ -694,8 +825,10 @@ $blood-lit:  #b5303a;
 		align-items: center;
 		padding: 12px 18px;
 		background-color: rgba(14, 10, 7, 0.94);
-		border: 1px solid $border;
+		border: 2px solid #2a1f15;
+		border-top: 3px solid $gold;
 		border-radius: 6px;
+		box-shadow: inset 0px 0px 0px 1px rgba(201, 162, 74, 0.3), 0px 10px 30px rgba(0,0,0,0.6);
 		pointer-events: all;
 		&.must { border-color: $blood-lit; }
 	}
@@ -707,20 +840,28 @@ $blood-lit:  #b5303a;
 	.tray-cards { flex-direction: row; }
 	.war-card {
 		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		width: 96px; height: 124px;
+		justify-content: flex-end;
+		width: 100px; height: 134px;
 		margin: 5px;
 		background-color: rgba(30, 23, 17, 0.96);
+		background-size: cover;
+		background-position: center;
 		border: 2px solid $border;
 		border-radius: 5px;
+		overflow: hidden;
 		transition: all 0.1s ease-out;
 		&:hover { transform: translateY(-4px); }
 		&.sel { transform: translateY(-8px); box-shadow: 0px 0px 14px $gold; border-color: $gold; }
 	}
-	.wc-glyph { font-size: 40px; }
-	.wc-kind { font-size: 15px; color: $text; margin-top: 4px; }
-	.wc-terr { font-size: 12px; color: $muted; margin-top: 2px; text-align: center; }
+	// Bottom scrim with the suit name + depicted territory, over the illustration.
+	.wc-overlay {
+		flex-direction: column;
+		align-items: center;
+		padding: 14px 4px 5px 4px;
+		background-image: linear-gradient( rgba(0,0,0,0), rgba(10, 7, 4, 0.92) );
+	}
+	.wc-kind { font-size: 14px; margin-top: 0px; text-shadow: 0px 1px 3px rgba(0,0,0,0.95); }
+	.wc-terr { font-size: 11px; color: $parchment; margin-top: 1px; text-align: center; text-shadow: 0px 1px 2px rgba(0,0,0,0.95); }
 
 	.tray-actions { flex-direction: row; margin-top: 10px; }
 	.muster-btn {
@@ -823,6 +964,17 @@ $blood-lit:  #b5303a;
 		border: 1px solid $gold; border-radius: 4px;
 		font-size: 22px; color: #fff; letter-spacing: 2px;
 		&:hover { background-color: rgba(110, 86, 40, 1); }
+		&:active { transform: scale(0.97); }
+	}
+	.victory-stats { flex-direction: row; justify-content: center; margin: 6px 0px 30px 0px; }
+	.vstat { flex-direction: column; align-items: center; margin: 0px 22px; }
+	.vstat-num { font-size: 38px; color: $gold; text-shadow: 0px 2px 8px rgba(0,0,0,0.7); }
+	.vstat-lbl { font-size: 13px; color: $muted; letter-spacing: 2px; margin-top: 2px; }
+	.victory-actions { flex-direction: row; }
+	.victory-button.alt {
+		background-color: $panel-soft; border-color: $border; color: $parchment;
+		margin-left: 14px;
+		&:hover { background-color: rgba(80, 62, 30, 0.7); }
 	}
 }
 
@@ -856,4 +1008,9 @@ $blood-lit:  #b5303a;
 	0%   { filter: drop-shadow( 0px 0px 6px rgba(201, 162, 74, 0.5) ); }
 	50%  { filter: drop-shadow( 0px 0px 22px rgba(201, 162, 74, 0.95) ); }
 	100% { filter: drop-shadow( 0px 0px 6px rgba(201, 162, 74, 0.5) ); }
+}
+@keyframes select-pulse {
+	0%   { opacity: 0.34; }
+	50%  { opacity: 0.55; }
+	100% { opacity: 0.34; }
 }

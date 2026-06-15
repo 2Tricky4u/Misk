@@ -92,6 +92,82 @@ public sealed partial class MiskGame
 		BumpVersion();
 	}
 
+	/// <summary>Start a single-player skirmish: one human seat plus <paramref name="aiCount"/> AI seats.</summary>
+	public void StartSkirmish( int aiCount )
+	{
+		if ( Data == null )
+			return;
+
+		IsHotseat = true;
+		Mode = GameMode.Lobby;
+		Seats.Clear();
+
+		aiCount = Math.Clamp( aiCount, 1, MaxSeats - 1 );
+
+		Seats.Add( new SeatInfo
+		{
+			PlayerId = "seat_0",
+			FactionId = Data.Factions[0].Id,
+			DisplayName = "You",
+			ConnectionId = Guid.Empty,
+			IsReady = true,
+			IsHuman = true,
+		} );
+
+		for ( int i = 1; i <= aiCount; i++ )
+		{
+			Seats.Add( new SeatInfo
+			{
+				PlayerId = $"seat_{i}",
+				FactionId = Data.Factions[i % Data.Factions.Count].Id,
+				DisplayName = $"Commander {i}",
+				ConnectionId = Guid.Empty,
+				IsReady = true,
+				IsHuman = false,
+			} );
+		}
+		BumpVersion();
+	}
+
+	/// <summary>Lobby: add a seat (host-local). AI seats are always ready and play themselves.</summary>
+	[Rpc.Host]
+	public void RequestAddSeat( bool ai )
+	{
+		if ( !IsAuthority || Mode != GameMode.Lobby || !CallerIsHost() )
+			return;
+		if ( Seats.Count >= MaxSeats || Data == null )
+			return;
+
+		int n = ai ? Seats.Count( s => !s.IsHuman ) + 1 : Seats.Count( s => s.IsHuman ) + 1;
+		Seats.Add( new SeatInfo
+		{
+			PlayerId = "seat_" + Guid.NewGuid().ToString( "N" ).Substring( 0, 8 ),
+			FactionId = NextFreeFactionId(),
+			DisplayName = ai ? $"Commander {n}" : $"Player {n}",
+			ConnectionId = Guid.Empty,
+			IsReady = true, // hotseat seats (human or AI) are ready by convention
+			IsHuman = !ai,
+		} );
+		BumpVersion();
+	}
+
+	/// <summary>Lobby: remove a seat (host-local), keeping at least two players.</summary>
+	[Rpc.Host]
+	public void RequestRemoveSeat( string playerId )
+	{
+		if ( !IsAuthority || Mode != GameMode.Lobby || !CallerIsHost() )
+			return;
+		if ( Seats.Count <= 2 )
+			return;
+
+		int idx = IndexOfSeat( playerId );
+		if ( idx >= 0 )
+		{
+			Seats.RemoveAt( idx );
+			BumpVersion();
+		}
+	}
+
 	/// <summary>Leave the current game/lobby and return everyone to the main menu.</summary>
 	public void ReturnToMenu()
 	{
@@ -122,6 +198,14 @@ public sealed partial class MiskGame
 		_ctx = null;
 		_events = null;
 		BumpVersion();
+	}
+
+	/// <summary>Replay the same line-up — keep the seats and rebuild the match from scratch.</summary>
+	public void Rematch()
+	{
+		if ( !IsAuthority || Seats.Count < 2 )
+			return;
+		HostStartGame();
 	}
 
 	// ------------------------------------------------------------------ connection lifecycle
@@ -408,6 +492,8 @@ public sealed partial class MiskGame
 		foreach ( var p in players )
 			CardCounts[p.Id] = 0;
 		CardSetsTradedIn = 0;
+		BattlesFought = 0;
+		Captures = 0;
 		ClearPendingAdvanceSync();
 		CombatLog.Clear();
 		WinnerPlayerId = null;
@@ -460,10 +546,25 @@ public sealed partial class MiskGame
 			WinnerPlayerId = e.PlayerId;
 			Mode = GameMode.GameOver;
 		};
-		_events.CombatResolved += e => BroadcastCombat(
-			e.FromTerritoryId, e.ToTerritoryId, e.AttackerPlayerId, e.DefenderPlayerId,
-			e.AttackerDice.ToArray(), e.DefenderDice.ToArray(),
-			e.AttackerLosses, e.DefenderLosses, e.Captured );
+		_events.CombatResolved += e =>
+		{
+			BattlesFought++;
+			if ( e.Captured )
+				Captures++;
+			BroadcastCombat(
+				e.FromTerritoryId, e.ToTerritoryId, e.AttackerPlayerId, e.DefenderPlayerId,
+				e.AttackerDice.ToArray(), e.DefenderDice.ToArray(),
+				e.AttackerLosses, e.DefenderLosses, e.Captured );
+
+			// A warlord who just lost their last realm is eliminated — toll the defeat sting.
+			if ( e.Captured && !string.IsNullOrEmpty( e.DefenderPlayerId )
+				&& _state.Map.CountOwnedBy( e.DefenderPlayerId ) == 0 )
+			{
+				var df = FactionOf( e.DefenderPlayerId );
+				BroadcastLog( $"{df?.Name ?? "A host"} is no more.", df?.Accent ?? "#b5303a", true );
+				MiskAudio.Play( "defeat" );
+			}
+		};
 
 		_events.HandChanged += e =>
 		{
@@ -474,12 +575,14 @@ public sealed partial class MiskGame
 		{
 			var f = FactionOf( e.PlayerId );
 			BroadcastLog( $"{f?.Name ?? "A host"} claims the spoils of war.", f?.Accent ?? "#e8dcc0", false );
+			MiskAudio.Play( "draw" );
 		};
 		_events.CardsTraded += e =>
 		{
 			var f = FactionOf( e.PlayerId );
 			string bonus = e.TerritoryBonus > 0 ? $" (+{e.TerritoryBonus} on home soil)" : "";
 			BroadcastLog( $"{f?.Name ?? "A host"} musters {e.Armies} levies from spoils{bonus}.", f?.Accent ?? "#c9a24a", true );
+			MiskAudio.Play( "trade" );
 		};
 		_events.AdvanceChanged += e => SyncAdvanceFromState();
 		_events.SetupChanged += e => SyncSetupFromState();

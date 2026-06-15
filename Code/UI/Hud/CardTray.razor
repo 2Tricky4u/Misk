@@ -24,13 +24,16 @@
 		<div class="tray-cards">
 			@foreach ( var card in hand )
 			{
-				var style = Game.Theme.Card( card.Kind.ToString().ToLowerInvariant() );
+				var key = card.Kind.ToString().ToLowerInvariant();
+				var style = Game.Theme.Card( key );
 				var selected = BoardInteraction.SelectedCardIds.Contains( card.Id );
-				<div class="war-card @(selected ? "sel" : "")" style="border-color: @style.Color;"
-					 onclick=@(() => BoardInteraction.ToggleCard( card.Id ))>
-					<div class="wc-glyph" style="color: @style.Color;">@style.Glyph</div>
-					<div class="wc-kind">@style.Name</div>
-					<div class="wc-terr">@TerritoryName( card.TerritoryId )</div>
+				<div class="war-card @(selected ? "sel" : "")"
+					 style="border-color: @style.Color; background-image: url( data/theme/cards/@(key).png );"
+					 onclick=@(() => { MiskAudio.Click(); BoardInteraction.ToggleCard( card.Id ); })>
+					<div class="wc-overlay">
+						<div class="wc-kind" style="color: @style.Color;">@style.Name</div>
+						<div class="wc-terr">@TerritoryName( card.TerritoryId )</div>
+					</div>
 				</div>
 			}
 		</div>
