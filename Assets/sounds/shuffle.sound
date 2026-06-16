@@ -1,6 +1,6 @@
 {
 	"UI": true,
-	"Volume": 0.6,
+	"Volume": 1.0,
 	"Sounds": [
 		"sounds/sfx_shuffle.mp3"
 	]

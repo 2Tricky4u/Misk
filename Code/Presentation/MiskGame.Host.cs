@@ -661,7 +661,7 @@ public sealed partial class MiskGame
 		{
 			var f = FactionOf( e.PlayerId );
 			BroadcastLog( $"{f?.Name ?? "A host"} claims the spoils of war.", f?.Accent ?? "#e8dcc0", false );
-			MiskAudio.Play( "draw" );
+			MiskAudio.Play( "shuffle" );
 		};
 		_events.CardsTraded += e =>
 		{

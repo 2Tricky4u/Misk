@@ -16,9 +16,9 @@
 	}
 
 	bool showing = ShouldShow( hand );
-	// Riffle cue the moment the tray first appears for the turn.
+	// Deal cue the moment the tray first appears for the turn.
 	if ( showing && !_wasShowing )
-		MiskAudio.Play( "shuffle" );
+		MiskAudio.Play( "draw" );
 	_wasShowing = showing;
 }
 @* A full-area, click-through wrapper. The interactive panels are CHILD elements — never the
@@ -115,7 +115,7 @@
 	// Forced open while a trade is mandatory; otherwise honour the player's minimize choice.
 	private bool Collapsed => BoardInteraction.SpoilsCollapsed && !Game.MustTradeNow;
 
-	private void Expand() { MiskAudio.Play( "shuffle" ); BoardInteraction.SpoilsCollapsed = false; }
+	private void Expand() { MiskAudio.Play( "draw" ); BoardInteraction.SpoilsCollapsed = false; }
 	private void Collapse() { MiskAudio.Click(); BoardInteraction.SpoilsCollapsed = true; }
 
 	private string TerritoryName( string id )

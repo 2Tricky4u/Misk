@@ -220,6 +220,10 @@ public sealed partial class MiskGame : Component, Component.INetworkListener
 
 	protected override void OnUpdate()
 	{
+		// Release any queued card cues (shuffle/draw) now that a frame has passed — they wait for
+		// battle/other effects to finish and then play in full. See MiskAudio.Tick.
+		MiskAudio.Tick();
+
 		// Music bed: a calmer theme in menu/lobby, the war bed in-game and on the victory screen.
 		// EnsureMusic loops and switches tracks. Synced Mode means every client plays local audio.
 		if ( Mode == GameMode.InGame || Mode == GameMode.GameOver )
